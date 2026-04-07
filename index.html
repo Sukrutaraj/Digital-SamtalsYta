@@ -344,7 +344,14 @@ document.querySelectorAll(".choice")
 
 b.classList.add("active");
 
+/* 🔊 NYTT */
+playClick();
+
+/* 🔊 SEN RÖST */
+setTimeout(()=>{
 speak(text);
+}, 120);
+
 };
 
 c.appendChild(b);
@@ -398,6 +405,30 @@ for(let i=1;i<=scaleMax;i++){
 createBtn(i,"scale",i);
 }
 }
+
+}
+
+function playClick(){
+
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+
+osc.type = "square";
+osc.frequency.value = 600; // klick-ton
+
+gain.gain.value = 0.1; // volym
+
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+osc.start();
+
+setTimeout(()=>{
+osc.stop();
+ctx.close();
+}, 80);
 
 }
 

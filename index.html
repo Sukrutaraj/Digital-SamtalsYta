@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Digital Samtalsyta</title>
+
+<style>
+
+body{
+font-family:sans-serif;
+background:#f5f5f5;
+text-align:center;
+padding:20px;
+}
+
+.section{
+background:white;
+padding:15px;
+margin:10px auto;
+border-radius:12px;
+max-width:700px;
+}
+
+#runPanel{display:none;}
+
+.grid{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:20px;
+}
+
+.choice{
+width:150px;
+height:150px;
+border-radius:20px;
+font-size:28px;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+cursor:pointer;
+}
+
+.choice img{
+max-height:60px;
+margin-bottom:6px;
+}
+
+.yes{background:#4CAF50;}
+.no{background:#F44336;}
+.maybe{background:orange;}
+.scale{background:#607D8B;color:white;}
+
+.active{
+outline:6px solid white;
+}
+
+.next{
+background:#1976D2;
+color:white;
+padding:16px 26px;
+border:none;
+border-radius:10px;
+font-size:20px;
+margin-top:20px;
+cursor:pointer;
+}
+
+.choicePreview{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px;
+background:#fafafa;
+margin:8px 0;
+border-radius:10px;
+}
+
+.smallBtn{
+background:#eee;
+padding:6px 10px;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="editPanel">
+
+<h2>Digital Samtalsyta</h2>
+
+<div class="section">
+<b>⚙️ Välj valtyp</b><br><br>
+
+<select id="mode" onchange="setupChoices()">
+<option value="">-- välj --</option>
+<option value="yesnomaybe">Ja / Vet ej / Nej</option>
+<option value="yesno">Ja / Nej</option>
+<option value="scale">Skala</option>
+</select>
+</div>
+
+<div class="section" id="globalChoices"></div>
+
+<div id="questions"></div>
+
+<button onclick="addQuestion()">➕ Lägg till fråga</button>
+
+<br><br>
+
+<button onclick="start()" class="next">▶️ Starta samtalsyta</button>
+
+<br><br>
+
+<button onclick="saveTemplate()">💾 Spara mall</button>
+<button onclick="loadTemplate()">📂 Ladda mall</button>
+
+</div>
+
+<!-- RUN -->
+<div id="runPanel">
+
+<h2 id="q"></h2>
+<img id="img" style="max-width:300px"><br>
+
+<div id="choices" class="grid"></div>
+
+<button class="next" onclick="nextQ()">Nästa</button>
+
+<div id="results"></div>
+
+</div>
+
+<script>
+
+/* ---------- DATA ---------- */
+
+let choices = {
+v1:{text:"Ja",emoji:"👍"},
+v2:{text:"Vet ej",emoji:"🤷"},
+v3:{text:"Nej",emoji:"👎"}
+};
+
+let choiceImgs = {};
+let scaleMax = 5;
+
+let questions=[];
+let answers=[];
+let current=0;
+let selected=null;
+
+/* ---------- SETUP ---------- */
+
+function setupChoices(){
+
+const mode = document.getElementById("mode").value;
+const box = document.getElementById("globalChoices");
+
+if(!mode){
+box.style.display="none";
+return;
+}
+
+box.style.display="block";
+
+function row(key){
+return `
+<div class="choicePreview">
+
+<span>
+${choiceImgs[key] 
+? '<img src="'+choiceImgs[key]+'" style="height:40px">'
+: choices[key].emoji}
+ ${choices[key].text}
+</span>
+
+<div>
+<button class="smallBtn" onclick="editText('${key}')">✏️</button>
+<button class="smallBtn" onclick="editEmoji('${key}')">😀</button>
+<button class="smallBtn" onclick="uploadChoiceImg('${key}')">🖼️</button>
+</div>
+
+</div>
+`;
+}
+
+let html="";
+
+if(mode==="yesnomaybe"){
+html = row("v1")+row("v2")+row("v3");
+}
+
+if(mode==="yesno"){
+html = row("v1")+row("v3");
+}
+
+if(mode==="scale"){
+html = `
+<div class="choicePreview">
+<span>Skala 1–${scaleMax}</span>
+<button class="smallBtn" onclick="editScale()">🔢 Ändra</button>
+</div>
+`;
+}
+
+box.innerHTML = html;
+}
+
+/* ---------- EDIT ---------- */
+
+function editText(key){
+let v = prompt("Ny text:", choices[key].text);
+if(v) choices[key].text = v;
+setupChoices();
+}
+
+function editEmoji(key){
+let v = prompt("Ny emoji:", choices[key].emoji);
+if(v){
+choiceImgs[key]=null;
+choices[key].emoji=v;
+}
+setupChoices();
+}
+
+function uploadChoiceImg(key){
+
+let input = document.createElement("input");
+input.type = "file";
+input.accept = "image/*";
+
+input.onchange = function(e){
+
+const reader = new FileReader();
+
+reader.onload = function(){
+choiceImgs[key] = this.result;
+setupChoices();
+};
+
+reader.readAsDataURL(e.target.files[0]);
+};
+
+input.click();
+}
+
+function editScale(){
+let v = prompt("Hur många steg?", scaleMax);
+if(v){
+scaleMax = parseInt(v);
+setupChoices();
+}
+}
+
+/* ---------- FRÅGOR ---------- */
+
+function addQuestion(){
+
+const i = questions.length;
+
+questions.push({text:"",img:""});
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input placeholder="Skriv fråga"
+style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" style="max-width:200px;display:none">
+`;
+
+document.getElementById("questions").appendChild(div);
+}
+
+function loadImg(e,i){
+const r=new FileReader();
+r.onload=function(){
+questions[i].img=this.result;
+const img=document.getElementById("img"+i);
+img.src=this.result;
+img.style.display="block";
+};
+r.readAsDataURL(e.target.files[0]);
+}
+
+/* ---------- START ---------- */
+
+function start(){
+
+if(questions.length===0){
+alert("Lägg till minst en fråga");
+return;
+}
+
+document.getElementById("editPanel").style.display="none";
+document.getElementById("runPanel").style.display="block";
+
+render();
+}
+
+/* ---------- RENDER ---------- */
+
+function render(){
+
+if(current >= questions.length){
+showResults();
+return;
+}
+
+q.innerText = questions[current].text;
+img.src = questions[current].img || "";
+
+const mode=document.getElementById("mode").value;
+const c=document.getElementById("choices");
+
+c.innerHTML="";
+
+function createBtn(label,type,text){
+
+let b=document.createElement("div");
+b.className="choice "+type;
+b.innerHTML=label;
+
+b.onclick=function(){
+
+selected = text;
+
+document.querySelectorAll(".choice")
+.forEach(x=>x.classList.remove("active"));
+
+b.classList.add("active");
+
+speak(text);
+};
+
+c.appendChild(b);
+}
+
+if(mode==="yesnomaybe"){
+
+createBtn(
+(choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)
++"<br>"+choices.v1.text,
+"yes",
+choices.v1.text
+);
+
+createBtn(
+(choiceImgs.v2 ? '<img src="'+choiceImgs.v2+'">' : choices.v2.emoji)
++"<br>"+choices.v2.text,
+"maybe",
+choices.v2.text
+);
+
+createBtn(
+(choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)
++"<br>"+choices.v3.text,
+"no",
+choices.v3.text
+);
+
+}
+
+if(mode==="yesno"){
+
+createBtn(
+(choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)
++"<br>"+choices.v1.text,
+"yes",
+choices.v1.text
+);
+
+createBtn(
+(choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)
++"<br>"+choices.v3.text,
+"no",
+choices.v3.text
+);
+
+}
+
+if(mode==="scale"){
+for(let i=1;i<=scaleMax;i++){
+createBtn(i,"scale",i);
+}
+}
+
+}
+
+/* ---------- SPEAK ---------- */
+
+function speak(t){
+speechSynthesis.cancel();
+let msg=new SpeechSynthesisUtterance(t.toString());
+msg.lang="sv-SE";
+speechSynthesis.speak(msg);
+}
+
+/* ---------- NEXT ---------- */
+
+function nextQ(){
+
+if(!selected) return;
+
+answers.push({
+q: questions[current].text,
+a: selected
+});
+
+selected=null;
+current++;
+
+render();
+}
+
+/* ---------- RESULT ---------- */
+
+function showResults(){
+
+let r=document.getElementById("results");
+
+r.innerHTML="<h2>Resultat</h2>";
+
+answers.forEach((x,i)=>{
+r.innerHTML+=`
+<div class="section">
+<b>Fråga ${i+1}</b><br>
+${x.q}<br>
+Svar: ${x.a}
+</div>
+`;
+});
+
+}
+
+/* ---------- SAVE ---------- */
+
+function saveTemplate(){
+
+let name = prompt("Namn på mallen:");
+if(!name) return;
+
+const data = {
+choices,
+choiceImgs,
+scaleMax,
+questions,
+mode: document.getElementById("mode").value
+};
+
+localStorage.setItem("samtalsyta_"+name, JSON.stringify(data));
+
+alert("Sparad!");
+}
+
+/* ---------- LOAD ---------- */
+
+function loadTemplate(){
+
+let keys = Object.keys(localStorage)
+.filter(k => k.startsWith("samtalsyta_"));
+
+if(keys.length === 0){
+alert("Inga mallar sparade");
+return;
+}
+
+let names = keys.map(k => k.replace("samtalsyta_",""));
+
+let name = prompt("Vilken mall?\n\n"+names.join("\n"));
+
+if(!name) return;
+
+let data = JSON.parse(localStorage.getItem("samtalsyta_"+name));
+
+choices = data.choices;
+choiceImgs = data.choiceImgs || {};
+scaleMax = data.scaleMax;
+questions = data.questions;
+
+document.getElementById("mode").value = data.mode;
+
+document.getElementById("questions").innerHTML="";
+
+questions.forEach((q,i)=>{
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input value="${q.text}"
+style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" src="${q.img || ""}" 
+style="max-width:200px;${q.img ? '' : 'display:none'}">
+`;
+
+document.getElementById("questions").appendChild(div);
+
+});
+
+setupChoices();
+
+alert("Mall laddad!");
+}
+
+/* INIT */
+setupChoices();
+addQuestion();
+
+</script>
+
+</body>
+</html>

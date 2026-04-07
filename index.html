@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Digital Samtalsyta</title>
+<title>Digital samtalsyta</title>
 
 <style>
 
@@ -93,7 +93,7 @@ cursor:pointer;
 
 <div id="editPanel">
 
-<h2>Digital Samtalsyta</h2>
+<h2>Digital samtalsyta</h2>
 
 <div class="section">
 <b>⚙️ Välj valtyp</b><br><br>
@@ -344,13 +344,11 @@ document.querySelectorAll(".choice")
 
 b.classList.add("active");
 
-/* 🔊 NYTT */
 playClick();
 
-/* 🔊 SEN RÖST */
 setTimeout(()=>{
 speak(text);
-}, 120);
+},120);
 
 };
 
@@ -359,44 +357,16 @@ c.appendChild(b);
 
 if(mode==="yesnomaybe"){
 
-createBtn(
-(choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)
-+"<br>"+choices.v1.text,
-"yes",
-choices.v1.text
-);
-
-createBtn(
-(choiceImgs.v2 ? '<img src="'+choiceImgs.v2+'">' : choices.v2.emoji)
-+"<br>"+choices.v2.text,
-"maybe",
-choices.v2.text
-);
-
-createBtn(
-(choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)
-+"<br>"+choices.v3.text,
-"no",
-choices.v3.text
-);
+createBtn((choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn((choiceImgs.v2 ? '<img src="'+choiceImgs.v2+'">' : choices.v2.emoji)+"<br>"+choices.v2.text,"maybe",choices.v2.text);
+createBtn((choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)+"<br>"+choices.v3.text,"no",choices.v3.text);
 
 }
 
 if(mode==="yesno"){
 
-createBtn(
-(choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)
-+"<br>"+choices.v1.text,
-"yes",
-choices.v1.text
-);
-
-createBtn(
-(choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)
-+"<br>"+choices.v3.text,
-"no",
-choices.v3.text
-);
+createBtn((choiceImgs.v1 ? '<img src="'+choiceImgs.v1+'">' : choices.v1.emoji)+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn((choiceImgs.v3 ? '<img src="'+choiceImgs.v3+'">' : choices.v3.emoji)+"<br>"+choices.v3.text,"no",choices.v3.text);
 
 }
 
@@ -408,6 +378,8 @@ createBtn(i,"scale",i);
 
 }
 
+/* ---------- KLICKLJUD ---------- */
+
 function playClick(){
 
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -415,10 +387,9 @@ const ctx = new (window.AudioContext || window.webkitAudioContext)();
 const osc = ctx.createOscillator();
 const gain = ctx.createGain();
 
-osc.type = "square";
-osc.frequency.value = 600; // klick-ton
-
-gain.gain.value = 0.1; // volym
+osc.type="square";
+osc.frequency.value=600;
+gain.gain.value=0.1;
 
 osc.connect(gain);
 gain.connect(ctx.destination);
@@ -428,11 +399,11 @@ osc.start();
 setTimeout(()=>{
 osc.stop();
 ctx.close();
-}, 80);
+},80);
 
 }
 
-/* ---------- SPEAK ---------- */
+/* ---------- RÖST ---------- */
 
 function speak(t){
 speechSynthesis.cancel();
@@ -441,7 +412,7 @@ msg.lang="sv-SE";
 speechSynthesis.speak(msg);
 }
 
-/* ---------- NEXT ---------- */
+/* ---------- NÄSTA ---------- */
 
 function nextQ(){
 
@@ -458,13 +429,16 @@ current++;
 render();
 }
 
-/* ---------- RESULT ---------- */
+/* ---------- RESULTAT ---------- */
 
 function showResults(){
 
 let r=document.getElementById("results");
 
-r.innerHTML="<h2>Resultat</h2>";
+r.innerHTML=`
+<h2>Resultat</h2>
+<button onclick="downloadResults()" class="next">⬇ Ladda ner resultat</button>
+`;
 
 answers.forEach((x,i)=>{
 r.innerHTML+=`
@@ -478,7 +452,31 @@ Svar: ${x.a}
 
 }
 
-/* ---------- SAVE ---------- */
+/* ---------- LADDA NER ---------- */
+
+function downloadResults(){
+
+let content = "RESULTAT\n\n";
+
+answers.forEach((x,i)=>{
+content += 
+"Fråga " + (i+1) + "\n" +
+x.q + "\n" +
+"Svar: " + x.a + "\n\n";
+});
+
+/* skapa fil */
+const blob = new Blob([content], {type:"text/plain"});
+
+/* ladda ner */
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "resultat.txt";
+a.click();
+
+}
+
+/* ---------- SPARA ---------- */
 
 function saveTemplate(){
 
@@ -498,32 +496,31 @@ localStorage.setItem("samtalsyta_"+name, JSON.stringify(data));
 alert("Sparad!");
 }
 
-/* ---------- LOAD ---------- */
+/* ---------- LADDA ---------- */
 
 function loadTemplate(){
 
 let keys = Object.keys(localStorage)
-.filter(k => k.startsWith("samtalsyta_"));
+.filter(k=>k.startsWith("samtalsyta_"));
 
-if(keys.length === 0){
+if(keys.length===0){
 alert("Inga mallar sparade");
 return;
 }
 
-let names = keys.map(k => k.replace("samtalsyta_",""));
+let names=keys.map(k=>k.replace("samtalsyta_",""));
 
-let name = prompt("Vilken mall?\n\n"+names.join("\n"));
-
+let name=prompt("Vilken mall?\n\n"+names.join("\n"));
 if(!name) return;
 
-let data = JSON.parse(localStorage.getItem("samtalsyta_"+name));
+let data=JSON.parse(localStorage.getItem("samtalsyta_"+name));
 
-choices = data.choices;
-choiceImgs = data.choiceImgs || {};
-scaleMax = data.scaleMax;
-questions = data.questions;
+choices=data.choices;
+choiceImgs=data.choiceImgs||{};
+scaleMax=data.scaleMax;
+questions=data.questions;
 
-document.getElementById("mode").value = data.mode;
+document.getElementById("mode").value=data.mode;
 
 document.getElementById("questions").innerHTML="";
 
@@ -533,8 +530,7 @@ const div=document.createElement("div");
 div.className="section";
 
 div.innerHTML=`
-<input value="${q.text}"
-style="width:80%;padding:8px"
+<input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
 
 <br><br>
@@ -543,8 +539,8 @@ oninput="questions[${i}].text=this.value">
 <input type="file" onchange="loadImg(event,${i})">
 
 <br>
-<img id="img${i}" src="${q.img || ""}" 
-style="max-width:200px;${q.img ? '' : 'display:none'}">
+<img id="img${i}" src="${q.img||""}"
+style="max-width:200px;${q.img?'':'display:none'}">
 `;
 
 document.getElementById("questions").appendChild(div);

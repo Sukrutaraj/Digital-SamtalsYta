@@ -97,7 +97,6 @@ background:#eee;padding:6px 10px;border-radius:6px;cursor:pointer;margin-left:5p
 
 <script>
 
-/* DATA */
 let choices = {
 v1:{text:"Ja",emoji:"👍"},
 v2:{text:"Vet ej",emoji:"🤷"},
@@ -112,15 +111,11 @@ let answers=[];
 let current=0;
 let selected=null;
 
-/* SETUP */
 function setupChoices(){
-
 const mode = document.getElementById("mode").value;
 const box = document.getElementById("globalChoices");
-
 if(!mode){box.style.display="none";return;}
 box.style.display="block";
-
 function row(key){
 return `
 <div class="choicePreview">
@@ -137,23 +132,18 @@ ${choiceImgs[key]
 </div>
 </div>`;
 }
-
 let html="";
-
 if(mode==="yesnomaybe") html = row("v1")+row("v2")+row("v3");
 if(mode==="yesno") html = row("v1")+row("v3");
-
 if(mode==="scale"){
 html = `<div class="choicePreview">
 <span>Skala 1–${scaleMax}</span>
 <button class="smallBtn" onclick="editScale()">🔢 Ändra</button>
 </div>`;
 }
-
 box.innerHTML = html;
 }
 
-/* EDIT */
 function editText(key){
 let v = prompt("Ny text:", choices[key].text);
 if(v) choices[key].text = v;
@@ -183,27 +173,21 @@ let v = prompt("Hur många steg?", scaleMax);
 if(v){scaleMax=parseInt(v);setupChoices();}
 }
 
-/* FRÅGOR */
 function addQuestion(){
 const i=questions.length;
 questions.push({text:"",img:""});
-
 const div=document.createElement("div");
 div.className="section";
-
 div.innerHTML=`
 <input placeholder="Skriv fråga"
 style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
-
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
-
 <br>
 <img id="img${i}" style="max-width:200px;display:none">
 `;
-
 document.getElementById("questions").appendChild(div);
 }
 
@@ -218,7 +202,6 @@ img.style.display="block";
 r.readAsDataURL(e.target.files[0]);
 }
 
-/* START */
 function start(){
 if(questions.length===0){alert("Lägg till minst en fråga");return;}
 editPanel.style.display="none";
@@ -226,14 +209,10 @@ runPanel.style.display="block";
 render();
 }
 
-/* RENDER */
 function render(){
-
 if(current>=questions.length){showResults();return;}
-
 q.innerText=questions[current].text;
 img.src=questions[current].img||"";
-
 const mode=document.getElementById("mode").value;
 const c=document.getElementById("choices");
 c.innerHTML="";
@@ -270,20 +249,12 @@ for(let i=1;i<=scaleMax;i++){
 createBtn(i,"scale",i);
 }
 }
-
 }
 
-/* LJUD */
 function playClick(){
-const ctx=new(window.AudioContext||window.webkitAudioContext)();
-const osc=ctx.createOscillator();
-const gain=ctx.createGain();
-osc.frequency.value=600;
-gain.gain.value=0.1;
-osc.connect(gain);
-gain.connect(ctx.destination);
-osc.start();
-setTimeout(()=>{osc.stop();ctx.close();},80);
+const click = new Audio("klick.mpeg-4");
+click.currentTime = 0;
+click.play();
 }
 
 function speak(t){
@@ -293,7 +264,6 @@ msg.lang="sv-SE";
 speechSynthesis.speak(msg);
 }
 
-/* NÄSTA */
 function nextQ(){
 if(!selected)return;
 answers.push({q:questions[current].text,a:selected});
@@ -302,7 +272,6 @@ current++;
 render();
 }
 
-/* RESULTAT */
 function showResults(){
 let r=results;
 r.innerHTML=`<h2>Resultat</h2>
@@ -313,7 +282,6 @@ r.innerHTML+=`<div class="section">
 });
 }
 
-/* DOWNLOAD */
 function downloadResults(){
 let content="RESULTAT\n\n";
 answers.forEach((x,i)=>{
@@ -326,7 +294,6 @@ a.download="resultat.txt";
 a.click();
 }
 
-/* TEMPLATE */
 function saveTemplate(){
 let name=prompt("Namn på mallen:");
 if(!name)return;
@@ -337,79 +304,55 @@ alert("Sparad!");
 }
 
 function loadTemplate(){
-
-let keys=Object.keys(localStorage)
-.filter(k=>k.startsWith("samtalsyta_"));
-
+let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
 let list=document.getElementById("templateList");
 list.style.display="block";
 list.innerHTML="<h3>Välj mall</h3>";
-
 keys.forEach(key=>{
-
 let name=key.replace("samtalsyta_","");
-
 let div=document.createElement("div");
 div.className="choicePreview";
-
 let btn=document.createElement("button");
 btn.innerText=name;
 btn.className="smallBtn";
-
 btn.onclick=function(){
 loadTemplateData(key);
 list.style.display="none";
 };
-
 div.appendChild(btn);
 list.appendChild(div);
-
 });
 }
 
 function loadTemplateData(key){
-
 let data=JSON.parse(localStorage.getItem(key));
-
 choices=data.choices;
 choiceImgs=data.choiceImgs||{};
 scaleMax=data.scaleMax;
 questions=data.questions;
-
 document.getElementById("mode").value=data.mode;
 document.getElementById("questions").innerHTML="";
-
 questions.forEach((q,i)=>{
-
 const div=document.createElement("div");
 div.className="section";
-
 div.innerHTML=`
 <input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
-
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
-
 <br>
-<img id="img${i}" src="${q.img||""}"
-style="max-width:200px;${q.img?'':'display:none'}">
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
 `;
-
 document.getElementById("questions").appendChild(div);
-
 });
-
 setupChoices();
 }
 
-/* PLAYLIST */
 function exportPlaylist(){
 let blob=new Blob([JSON.stringify({
 choices,choiceImgs,scaleMax,questions,mode:mode.value
 })],{type:"application/json"});
-
 let a=document.createElement("a");
 a.href=URL.createObjectURL(blob);
 a.download="frågelista.json";
@@ -417,62 +360,45 @@ a.click();
 }
 
 function importPlaylist(){
-
 let input=document.createElement("input");
 input.type="file";
 input.accept="application/json";
-
 input.onchange=e=>{
 let r=new FileReader();
 r.onload=()=>{
 try{
 let data=JSON.parse(r.result);
-
 choices=data.choices;
 choiceImgs=data.choiceImgs||{};
 scaleMax=data.scaleMax;
 questions=data.questions;
-
 mode.value=data.mode;
 document.getElementById("questions").innerHTML="";
-
 questions.forEach((q,i)=>{
-
 const div=document.createElement("div");
 div.className="section";
-
 div.innerHTML=`
 <input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
-
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
-
 <br>
-<img id="img${i}" src="${q.img||""}"
-style="max-width:200px;${q.img?'':'display:none'}">
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
 `;
-
 document.getElementById("questions").appendChild(div);
-
 });
-
 setupChoices();
-
 alert("Frågelista laddad!");
-
 }catch{
 alert("Fel fil");
 }
 };
 r.readAsText(e.target.files[0]);
 };
-
 input.click();
 }
 
-/* INIT */
 setupChoices();
 addQuestion();
 

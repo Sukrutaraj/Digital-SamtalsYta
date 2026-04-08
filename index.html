@@ -121,6 +121,11 @@ cursor:pointer;
 <button onclick="saveTemplate()">💾 Spara mall</button>
 <button onclick="loadTemplate()">📂 Ladda mall</button>
 
+<br><br>
+
+<button onclick="exportPlaylist()">📤 Exportera spellista</button>
+<button onclick="importPlaylist()">📥 Importera spellista</button>
+
 </div>
 
 <!-- RUN -->
@@ -465,15 +470,97 @@ x.q + "\n" +
 "Svar: " + x.a + "\n\n";
 });
 
-/* skapa fil */
 const blob = new Blob([content], {type:"text/plain"});
 
-/* ladda ner */
 const a = document.createElement("a");
 a.href = URL.createObjectURL(blob);
 a.download = "resultat.txt";
 a.click();
 
+}
+
+/* ---------- SPELLISTA EXPORT ---------- */
+
+function exportPlaylist(){
+
+const data = {
+choices,
+choiceImgs,
+scaleMax,
+questions,
+mode: document.getElementById("mode").value
+};
+
+const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "spellista.json";
+a.click();
+
+}
+
+/* ---------- SPELLISTA IMPORT ---------- */
+
+function importPlaylist(){
+
+let input = document.createElement("input");
+input.type = "file";
+input.accept = "application/json";
+
+input.onchange = function(e){
+
+const file = e.target.files[0];
+if(!file) return;
+
+const reader = new FileReader();
+
+reader.onload = function(){
+
+const data = JSON.parse(this.result);
+
+choices = data.choices;
+choiceImgs = data.choiceImgs || {};
+scaleMax = data.scaleMax;
+questions = data.questions;
+
+document.getElementById("mode").value = data.mode;
+document.getElementById("questions").innerHTML = "";
+
+questions.forEach((q,i)=>{
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" src="${q.img||""}"
+style="max-width:200px;${q.img?'':'display:none'}">
+`;
+
+document.getElementById("questions").appendChild(div);
+
+});
+
+setupChoices();
+
+alert("Spellista laddad!");
+
+};
+
+reader.readAsText(file);
+
+};
+
+input.click();
 }
 
 /* ---------- SPARA ---------- */
@@ -521,7 +608,6 @@ scaleMax=data.scaleMax;
 questions=data.questions;
 
 document.getElementById("mode").value=data.mode;
-
 document.getElementById("questions").innerHTML="";
 
 questions.forEach((q,i)=>{

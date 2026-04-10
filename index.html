@@ -445,54 +445,56 @@ downloadResults();
 }
 
 function saveTemplate(){
-let name=prompt("Namn på mallen:");
-if(!name)return;
 
-let data={
-choices,choiceImgs,scaleMax,questions,mode:mode.value
+let name = prompt("Namn på mallen:");
+if(!name) return;
+
+// 🔧 säker kopia av all data
+let data = {
+choices: JSON.parse(JSON.stringify(choices)),
+choiceImgs: JSON.parse(JSON.stringify(choiceImgs)),
+scaleMax: scaleMax,
+questions: JSON.parse(JSON.stringify(questions)),
+mode: document.getElementById("mode").value
 };
 
-localStorage.setItem("samtalsyta_"+name,JSON.stringify(data));
-
-// TEST: verifiera att det sparades
-let test = localStorage.getItem("samtalsyta_"+name);
-
-if(test){
+try{
+localStorage.setItem("samtalsyta_"+name, JSON.stringify(data));
 alert("Sparad!");
-}else{
-alert("Kunde inte spara på denna enhet");
+}catch(e){
+alert("Kunde inte spara");
 }
 }
 
 function loadTemplate(){
 
-let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
+let keys = Object.keys(localStorage)
+.filter(k => k.startsWith("samtalsyta_"));
 
-if(keys.length===0){
+if(keys.length === 0){
 alert("Inga sparade mallar");
 return;
 }
 
-let list=document.getElementById("templateList");
-list.style.display="block";
-list.innerHTML="<h3>Välj mall</h3>";
+let list = document.getElementById("templateList");
+list.style.display = "block";
+list.innerHTML = "<h3>Välj mall</h3>";
 
-keys.forEach(key=>{
+keys.forEach(key => {
 
-let name=key.replace("samtalsyta_","");
+let name = key.replace("samtalsyta_","");
 
-// FIX: stabilare knapp (iPhone)
-let btn=document.createElement("button");
-btn.innerText=name;
-btn.className="smallBtn";
+let btn = document.createElement("button");
+btn.innerText = name;
+btn.className = "smallBtn";
 
-btn.style.display="block";
-btn.style.margin="10px auto";
-btn.style.padding="10px";
+btn.style.display = "block";
+btn.style.margin = "10px auto";
+btn.style.padding = "10px";
 
-btn.onclick=function(){
+btn.onclick = function(){
 loadTemplateData(key);
-list.style.display="none";
+list.style.display = "none";
 };
 
 list.appendChild(btn);
@@ -501,33 +503,38 @@ list.appendChild(btn);
 }
 
 function loadTemplateData(key){
-let data=JSON.parse(localStorage.getItem(key));
 
-choices=data.choices;
-choiceImgs=data.choiceImgs||{};
-scaleMax=data.scaleMax;
-questions=data.questions;
+let data = JSON.parse(localStorage.getItem(key));
 
-document.getElementById("mode").value=data.mode;
-document.getElementById("questions").innerHTML="";
+choices = data.choices;
+choiceImgs = data.choiceImgs || {};
+scaleMax = data.scaleMax;
+questions = data.questions || [];
 
+document.getElementById("mode").value = data.mode;
+
+// 🔧 viktig fix: nollställ först
+document.getElementById("questions").innerHTML = "";
+
+// 🔧 bygg om korrekt
 questions.forEach((q,i)=>{
-const div=document.createElement("div");
-div.className="section";
 
-div.innerHTML=`
-<input value="${q.text}" style="width:80%;padding:8px"
-oninput="questions[${i}].text=this.value">
+addQuestion(); // 👉 använder din egen funktion (viktigt!)
 
-<br><br>
-<label>Ladda upp bild</label><br>
-<input type="file" onchange="loadImg(event,${i})">
+questions[i].text = q.text;
+questions[i].img = q.img;
 
-<br>
-<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
-`;
+// uppdatera input
+let inputs = document.querySelectorAll("#questions input[type='text']");
+inputs[i].value = q.text;
 
-document.getElementById("questions").appendChild(div);
+// uppdatera bild
+if(q.img){
+let img = document.getElementById("img"+i);
+img.src = q.img;
+img.style.display = "block";
+}
+
 });
 
 setupChoices();

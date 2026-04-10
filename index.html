@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -32,7 +32,6 @@ justify-content:center;
 gap:20px;
 }
 
-/* RESPONSIV */
 .choice{
 width:22vw;
 height:22vw;
@@ -92,7 +91,6 @@ cursor:pointer;
 margin-left:5px;
 }
 
-/* Runda knappar */
 .tool-row{
 display:flex;
 justify-content:center;
@@ -188,7 +186,6 @@ font-size:13px;
 
 </div>
 
-<!-- RUN -->
 <div id="runPanel">
 <h2 id="q"></h2>
 <img id="img" style="max-width:300px"><br>
@@ -357,12 +354,6 @@ if(mode==="yesno"){
 createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
 createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
 }
-
-if(mode==="scale"){
-for(let i=1;i<=scaleMax;i++){
-createBtn(i,"scale",i);
-}
-}
 }
 
 function playClick(){
@@ -410,26 +401,26 @@ a.download="resultat.txt";
 a.click();
 }
 
+/* 🔧 FIXAD SHARE */
+
 function sharePlaylist(){
+try{
+let data = JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value});
+let blob=new Blob([data],{type:"application/json"});
+let file=new File([blob],"samtalsyta.json");
 
-let data = JSON.stringify({
-choices,choiceImgs,scaleMax,questions,mode:mode.value
-}, null, 2);
-
-// skapa kopiera-funktion istället
-navigator.clipboard.writeText(data).then(()=>{
-alert("Frågelistan är kopierad! Klistra in i meddelande.");
-}).catch(()=>{
-// fallback
-let a=document.createElement("a");
-let blob=new Blob([data],{type:"text/plain"});
-a.href=URL.createObjectURL(blob);
-a.download="frågelista.txt";
-a.click();
-});
+if(navigator.canShare && navigator.canShare({files:[file]})){
+navigator.share({files:[file]});
+}else{
+exportPlaylist();
+}
+}catch(e){
+exportPlaylist();
+}
 }
 
 function shareResults(){
+try{
 let content="RESULTAT\n\n";
 answers.forEach((x,i)=>{
 content+="Fråga "+(i+1)+"\n"+x.q+"\nSvar: "+x.a+"\n\n";
@@ -437,104 +428,76 @@ content+="Fråga "+(i+1)+"\n"+x.q+"\nSvar: "+x.a+"\n\n";
 let blob=new Blob([content],{type:"text/plain"});
 let file=new File([blob],"resultat.txt");
 
-if(navigator.share){
+if(navigator.canShare && navigator.canShare({files:[file]})){
 navigator.share({files:[file]});
 }else{
+downloadResults();
+}
+}catch(e){
 downloadResults();
 }
 }
 
 function saveTemplate(){
-
-let name = prompt("Namn på mallen:");
-if(!name) return;
-
-// 🔧 säker kopia av all data
-let data = {
-choices: JSON.parse(JSON.stringify(choices)),
-choiceImgs: JSON.parse(JSON.stringify(choiceImgs)),
-scaleMax: scaleMax,
-questions: JSON.parse(JSON.stringify(questions)),
-mode: document.getElementById("mode").value
-};
-
-try{
-localStorage.setItem("samtalsyta_"+name, JSON.stringify(data));
+let name=prompt("Namn på mallen:");
+if(!name)return;
+localStorage.setItem("samtalsyta_"+name,JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value}));
 alert("Sparad!");
-}catch(e){
-alert("Kunde inte spara");
-}
 }
 
 function loadTemplate(){
+let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
+let list=document.getElementById("templateList");
+list.style.display="block";
+list.innerHTML="<h3>Välj mall</h3>";
 
-let keys = Object.keys(localStorage)
-.filter(k => k.startsWith("samtalsyta_"));
+keys.forEach(key=>{
+let name=key.replace("samtalsyta_","");
+let div=document.createElement("div");
+div.className="choicePreview";
 
-if(keys.length === 0){
-alert("Inga sparade mallar");
-return;
-}
+let btn=document.createElement("button");
+btn.innerText=name;
+btn.className="smallBtn";
 
-let list = document.getElementById("templateList");
-list.style.display = "block";
-list.innerHTML = "<h3>Välj mall</h3>";
-
-keys.forEach(key => {
-
-let name = key.replace("samtalsyta_","");
-
-let btn = document.createElement("button");
-btn.innerText = name;
-btn.className = "smallBtn";
-
-btn.style.display = "block";
-btn.style.margin = "10px auto";
-btn.style.padding = "10px";
-
-btn.onclick = function(){
+btn.onclick=function(){
 loadTemplateData(key);
-list.style.display = "none";
+list.style.display="none";
 };
 
-list.appendChild(btn);
-
+div.appendChild(btn);
+list.appendChild(div);
 });
 }
 
 function loadTemplateData(key){
+let data=JSON.parse(localStorage.getItem(key));
 
-let data = JSON.parse(localStorage.getItem(key));
+choices=data.choices;
+choiceImgs=data.choiceImgs||{};
+scaleMax=data.scaleMax;
+questions=data.questions;
 
-choices = data.choices;
-choiceImgs = data.choiceImgs || {};
-scaleMax = data.scaleMax;
-questions = data.questions || [];
+document.getElementById("mode").value=data.mode;
+document.getElementById("questions").innerHTML="";
 
-document.getElementById("mode").value = data.mode;
-
-// 🔧 viktig fix: nollställ först
-document.getElementById("questions").innerHTML = "";
-
-// 🔧 bygg om korrekt
 questions.forEach((q,i)=>{
+const div=document.createElement("div");
+div.className="section";
 
-addQuestion(); // 👉 använder din egen funktion (viktigt!)
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
 
-questions[i].text = q.text;
-questions[i].img = q.img;
+<br><br>
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
 
-// uppdatera input
-let inputs = document.querySelectorAll("#questions input[type='text']");
-inputs[i].value = q.text;
+<br>
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+`;
 
-// uppdatera bild
-if(q.img){
-let img = document.getElementById("img"+i);
-img.src = q.img;
-img.style.display = "block";
-}
-
+document.getElementById("questions").appendChild(div);
 });
 
 setupChoices();

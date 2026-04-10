@@ -411,12 +411,17 @@ a.click();
 }
 
 function sharePlaylist(){
-let data = JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value});
-let blob=new Blob([data],{type:"application/json"});
-let file=new File([blob],"samtalsyta.json");
 
+let data = JSON.stringify({
+choices,choiceImgs,scaleMax,questions,mode:mode.value
+}, null, 2);
+
+// FIX: skicka som text istället för fil (funkar på iPhone)
 if(navigator.share){
-navigator.share({files:[file]});
+navigator.share({
+title:"Frågelista",
+text:data
+});
 }else{
 exportPlaylist();
 }
@@ -445,27 +450,38 @@ alert("Sparad!");
 }
 
 function loadTemplate(){
+
 let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
+
+if(keys.length===0){
+alert("Inga sparade mallar");
+return;
+}
+
 let list=document.getElementById("templateList");
 list.style.display="block";
 list.innerHTML="<h3>Välj mall</h3>";
 
 keys.forEach(key=>{
-let name=key.replace("samtalsyta_","");
-let div=document.createElement("div");
-div.className="choicePreview";
 
+let name=key.replace("samtalsyta_","");
+
+// FIX: stabilare knapp (iPhone)
 let btn=document.createElement("button");
 btn.innerText=name;
 btn.className="smallBtn";
+
+btn.style.display="block";
+btn.style.margin="10px auto";
+btn.style.padding="10px";
 
 btn.onclick=function(){
 loadTemplateData(key);
 list.style.display="none";
 };
 
-div.appendChild(btn);
-list.appendChild(div);
+list.appendChild(btn);
+
 });
 }
 

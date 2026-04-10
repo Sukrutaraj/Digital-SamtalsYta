@@ -416,15 +416,17 @@ let data = JSON.stringify({
 choices,choiceImgs,scaleMax,questions,mode:mode.value
 }, null, 2);
 
-// FIX: skicka som text istället för fil (funkar på iPhone)
-if(navigator.share){
-navigator.share({
-title:"Frågelista",
-text:data
+// skapa kopiera-funktion istället
+navigator.clipboard.writeText(data).then(()=>{
+alert("Frågelistan är kopierad! Klistra in i meddelande.");
+}).catch(()=>{
+// fallback
+let a=document.createElement("a");
+let blob=new Blob([data],{type:"text/plain"});
+a.href=URL.createObjectURL(blob);
+a.download="frågelista.txt";
+a.click();
 });
-}else{
-exportPlaylist();
-}
 }
 
 function shareResults(){
@@ -445,8 +447,21 @@ downloadResults();
 function saveTemplate(){
 let name=prompt("Namn på mallen:");
 if(!name)return;
-localStorage.setItem("samtalsyta_"+name,JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value}));
+
+let data={
+choices,choiceImgs,scaleMax,questions,mode:mode.value
+};
+
+localStorage.setItem("samtalsyta_"+name,JSON.stringify(data));
+
+// TEST: verifiera att det sparades
+let test = localStorage.getItem("samtalsyta_"+name);
+
+if(test){
 alert("Sparad!");
+}else{
+alert("Kunde inte spara på denna enhet");
+}
 }
 
 function loadTemplate(){

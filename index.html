@@ -38,6 +38,38 @@ padding:10px;background:#fafafa;margin:8px 0;border-radius:10px;
 .smallBtn{
 background:#eee;padding:6px 10px;border-radius:6px;cursor:pointer;margin-left:5px;
 }
+
+/* NY: Runda knappar */
+.tool-row{
+display:flex;
+justify-content:center;
+gap:30px;
+margin-top:10px;
+}
+
+.tool-btn{
+display:flex;
+flex-direction:column;
+align-items:center;
+cursor:pointer;
+}
+
+.tool-btn .icon{
+width:70px;
+height:70px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+border:2px solid #333;
+font-size:28px;
+background:white;
+}
+
+.tool-btn .label{
+margin-top:6px;
+font-size:13px;
+}
 </style>
 </head>
 
@@ -69,13 +101,35 @@ background:#eee;padding:6px 10px;border-radius:6px;cursor:pointer;margin-left:5p
 
 <br><br>
 
-<button onclick="saveTemplate()">💾 Spara på denna enhet</button>
-<button onclick="loadTemplate()">📂 Öppna sparad mall</button>
+<!-- NY DESIGN (inga ändringar i funktion) -->
+<div class="tool-row">
 
-<br><br>
+<div class="tool-btn" onclick="saveTemplate()">
+<div class="icon">💾</div>
+<div class="label">Spara</div>
+</div>
 
-<button onclick="exportPlaylist()">⬇ Ladda ner frågelista</button>
-<button onclick="importPlaylist()">⬆ Ladda upp frågelista</button>
+<div class="tool-btn" onclick="loadTemplate()">
+<div class="icon">📂</div>
+<div class="label">Öppna</div>
+</div>
+
+<div class="tool-btn" onclick="exportPlaylist()">
+<div class="icon">⬇️</div>
+<div class="label">Ladda ner</div>
+</div>
+
+<div class="tool-btn" onclick="importPlaylist()">
+<div class="icon">⬆️</div>
+<div class="label">Ladda upp</div>
+</div>
+
+<div class="tool-btn" onclick="sharePlaylist()">
+<div class="icon">📤</div>
+<div class="label">Dela</div>
+</div>
+
+</div>
 
 <div id="templateList" class="section" style="display:none;"></div>
 
@@ -83,16 +137,11 @@ background:#eee;padding:6px 10px;border-radius:6px;cursor:pointer;margin-left:5p
 
 <!-- RUN -->
 <div id="runPanel">
-
 <h2 id="q"></h2>
 <img id="img" style="max-width:300px"><br>
-
 <div id="choices" class="grid"></div>
-
 <button class="next" onclick="nextQ()">Nästa</button>
-
 <div id="results"></div>
-
 </div>
 
 <script>
@@ -114,8 +163,10 @@ let selected=null;
 function setupChoices(){
 const mode = document.getElementById("mode").value;
 const box = document.getElementById("globalChoices");
+
 if(!mode){box.style.display="none";return;}
 box.style.display="block";
+
 function row(key){
 return `
 <div class="choicePreview">
@@ -132,15 +183,19 @@ ${choiceImgs[key]
 </div>
 </div>`;
 }
+
 let html="";
+
 if(mode==="yesnomaybe") html = row("v1")+row("v2")+row("v3");
 if(mode==="yesno") html = row("v1")+row("v3");
+
 if(mode==="scale"){
 html = `<div class="choicePreview">
 <span>Skala 1–${scaleMax}</span>
 <button class="smallBtn" onclick="editScale()">🔢 Ändra</button>
 </div>`;
 }
+
 box.innerHTML = html;
 }
 
@@ -176,18 +231,23 @@ if(v){scaleMax=parseInt(v);setupChoices();}
 function addQuestion(){
 const i=questions.length;
 questions.push({text:"",img:""});
+
 const div=document.createElement("div");
 div.className="section";
+
 div.innerHTML=`
 <input placeholder="Skriv fråga"
 style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
+
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
+
 <br>
 <img id="img${i}" style="max-width:200px;display:none">
 `;
+
 document.getElementById("questions").appendChild(div);
 }
 
@@ -210,9 +270,12 @@ render();
 }
 
 function render(){
+
 if(current>=questions.length){showResults();return;}
+
 q.innerText=questions[current].text;
 img.src=questions[current].img||"";
+
 const mode=document.getElementById("mode").value;
 const c=document.getElementById("choices");
 c.innerHTML="";
@@ -249,6 +312,7 @@ for(let i=1;i<=scaleMax;i++){
 createBtn(i,"scale",i);
 }
 }
+
 }
 
 function playClick(){
@@ -275,7 +339,9 @@ render();
 function showResults(){
 let r=results;
 r.innerHTML=`<h2>Resultat</h2>
-<button onclick="downloadResults()" class="next">⬇ Ladda ner resultat</button>`;
+<button onclick="downloadResults()" class="next">⬇ Ladda ner resultat</button>
+<button onclick="shareResults()" class="next">📩 Skicka resultat</button>`;
+
 answers.forEach((x,i)=>{
 r.innerHTML+=`<div class="section">
 <b>Fråga ${i+1}</b><br>${x.q}<br>Svar: ${x.a}</div>`;
@@ -284,9 +350,11 @@ r.innerHTML+=`<div class="section">
 
 function downloadResults(){
 let content="RESULTAT\n\n";
+
 answers.forEach((x,i)=>{
 content+="Fråga "+(i+1)+"\n"+x.q+"\nSvar: "+x.a+"\n\n";
 });
+
 let blob=new Blob([content],{type:"text/plain"});
 let a=document.createElement("a");
 a.href=URL.createObjectURL(blob);
@@ -294,58 +362,128 @@ a.download="resultat.txt";
 a.click();
 }
 
+function sharePlaylist(){
+let data = JSON.stringify({
+choices,choiceImgs,scaleMax,questions,mode:mode.value
+});
+
+let blob=new Blob([data],{type:"application/json"});
+let file=new File([blob],"samtalsyta_frågelista.json");
+
+if(navigator.share){
+navigator.share({
+title:"Frågelista",
+text:"Här är en frågelista",
+files:[file]
+});
+}else{
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="samtalsyta_frågelista.json";
+a.click();
+}
+}
+
+function shareResults(){
+
+let content="RESULTAT\n\n";
+
+answers.forEach((x,i)=>{
+content+="Fråga "+(i+1)+"\n"+x.q+"\nSvar: "+x.a+"\n\n";
+});
+
+let blob=new Blob([content],{type:"text/plain"});
+let file=new File([blob],"resultat.txt");
+
+if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+navigator.share({
+title:"Resultat",
+text:"Här är resultatet",
+files:[file]
+}).catch(err=>{
+console.log("Delning avbruten", err);
+});
+}else{
+alert("Din enhet stödjer inte direkt delning.\nFilen laddas ner istället.");
+downloadResults();
+}
+}
+
 function saveTemplate(){
 let name=prompt("Namn på mallen:");
 if(!name)return;
+
 localStorage.setItem("samtalsyta_"+name,JSON.stringify({
 choices,choiceImgs,scaleMax,questions,mode:mode.value
 }));
+
 alert("Sparad!");
 }
 
 function loadTemplate(){
-let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
+
+let keys=Object.keys(localStorage)
+.filter(k=>k.startsWith("samtalsyta_"));
+
 let list=document.getElementById("templateList");
 list.style.display="block";
 list.innerHTML="<h3>Välj mall</h3>";
+
 keys.forEach(key=>{
+
 let name=key.replace("samtalsyta_","");
+
 let div=document.createElement("div");
 div.className="choicePreview";
+
 let btn=document.createElement("button");
 btn.innerText=name;
 btn.className="smallBtn";
+
 btn.onclick=function(){
 loadTemplateData(key);
 list.style.display="none";
 };
+
 div.appendChild(btn);
 list.appendChild(div);
+
 });
 }
 
 function loadTemplateData(key){
+
 let data=JSON.parse(localStorage.getItem(key));
+
 choices=data.choices;
 choiceImgs=data.choiceImgs||{};
 scaleMax=data.scaleMax;
 questions=data.questions;
+
 document.getElementById("mode").value=data.mode;
 document.getElementById("questions").innerHTML="";
+
 questions.forEach((q,i)=>{
+
 const div=document.createElement("div");
 div.className="section";
+
 div.innerHTML=`
 <input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
+
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
+
 <br>
 <img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
 `;
+
 document.getElementById("questions").appendChild(div);
+
 });
+
 setupChoices();
 }
 
@@ -353,6 +491,7 @@ function exportPlaylist(){
 let blob=new Blob([JSON.stringify({
 choices,choiceImgs,scaleMax,questions,mode:mode.value
 })],{type:"application/json"});
+
 let a=document.createElement("a");
 a.href=URL.createObjectURL(blob);
 a.download="frågelista.json";
@@ -360,42 +499,58 @@ a.click();
 }
 
 function importPlaylist(){
+
 let input=document.createElement("input");
 input.type="file";
 input.accept="application/json";
+
 input.onchange=e=>{
 let r=new FileReader();
+
 r.onload=()=>{
 try{
 let data=JSON.parse(r.result);
+
 choices=data.choices;
 choiceImgs=data.choiceImgs||{};
 scaleMax=data.scaleMax;
 questions=data.questions;
+
 mode.value=data.mode;
 document.getElementById("questions").innerHTML="";
+
 questions.forEach((q,i)=>{
+
 const div=document.createElement("div");
 div.className="section";
+
 div.innerHTML=`
 <input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
+
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
+
 <br>
 <img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
 `;
+
 document.getElementById("questions").appendChild(div);
+
 });
+
 setupChoices();
 alert("Frågelista laddad!");
+
 }catch{
 alert("Fel fil");
 }
 };
+
 r.readAsText(e.target.files[0]);
 };
+
 input.click();
 }
 

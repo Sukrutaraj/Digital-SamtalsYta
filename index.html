@@ -1,187 +1,8 @@
-<!DOCTYPE html> 
-<html lang="sv">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Digital samtalsyta</title>
-
-<style>
-body{
-font-family:sans-serif;
-background:#f5f5f5;
-text-align:center;
-padding:20px;
-max-width:900px;
-margin:auto;
-}
-.section{
-background:white;
-padding:15px;
-margin:10px auto;
-border-radius:12px;
-max-width:700px;
-}
-#runPanel{display:none;}
-.grid{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:20px;
-}
-.choice{
-width:22vw;
-height:22vw;
-max-width:150px;
-max-height:150px;
-min-width:90px;
-min-height:90px;
-border-radius:20px;
-font-size:clamp(16px,2.5vw,28px);
-display:flex;
-align-items:center;
-justify-content:center;
-flex-direction:column;
-cursor:pointer;
-}
-.choice img{
-max-height:60px;
-margin-bottom:6px;
-}
-.yes{background:#4CAF50;}
-.no{background:#F44336;}
-.maybe{background:orange;}
-.scale{background:#607D8B;color:white;}
-.active{outline:6px solid white;}
-.next{
-background:#1976D2;
-color:white;
-padding:16px 26px;
-border:none;
-border-radius:10px;
-font-size:20px;
-margin-top:20px;
-cursor:pointer;
-}
-.choicePreview{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px;
-background:#fafafa;
-margin:8px 0;
-border-radius:10px;
-}
-.smallBtn{
-background:#eee;
-padding:6px 10px;
-border-radius:6px;
-cursor:pointer;
-margin-left:5px;
-}
-.tool-row{
-display:flex;
-justify-content:center;
-gap:30px;
-margin-top:10px;
-flex-wrap:wrap;
-}
-.tool-btn{
-display:flex;
-flex-direction:column;
-align-items:center;
-cursor:pointer;
-}
-.tool-btn .icon{
-width:70px;
-height:70px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-border:2px solid #333;
-font-size:28px;
-background:white;
-}
-.tool-btn .label{
-margin-top:6px;
-font-size:13px;
-}
-</style>
-</head>
-
-<body>
-
-<div id="editPanel">
-
-<h2>Digital samtalsyta</h2>
-
-<div class="section">
-<b>⚙️ Välj valtyp</b><br><br>
-<select id="mode" onchange="setupChoices()">
-<option value="">-- välj --</option>
-<option value="yesnomaybe">Ja / Vet ej / Nej</option>
-<option value="yesno">Ja / Nej</option>
-<option value="scale">Skala</option>
-</select>
-</div>
-
-<div class="section" id="globalChoices"></div>
-
-<div id="questions"></div>
-
-<button onclick="addQuestion()">➕ Lägg till fråga</button>
-
-<br><br>
-
-<button onclick="start()" class="next">▶️ Starta samtalsyta</button>
-
-<br><br>
-
-<div class="tool-row">
-
-<div class="tool-btn" onclick="saveTemplate()">
-<div class="icon">💾</div>
-<div class="label">Spara</div>
-</div>
-
-<div class="tool-btn" onclick="loadTemplate()">
-<div class="icon">📂</div>
-<div class="label">Öppna</div>
-</div>
-
-<div class="tool-btn" onclick="exportPlaylist()">
-<div class="icon">⬇️</div>
-<div class="label">Ladda ner</div>
-</div>
-
-<div class="tool-btn" onclick="importPlaylist()">
-<div class="icon">⬆️</div>
-<div class="label">Ladda upp</div>
-</div>
-
-<div class="tool-btn" onclick="createShareLink()">
-<div class="icon">🔗</div>
-<div class="label">Skapa länk</div>
-</div>
-
-</div>
-
-<div id="templateList" class="section" style="display:none;"></div>
-
-</div>
-
-<div id="runPanel">
-<h2 id="q"></h2>
-<img id="img" style="max-width:300px"><br>
-<div id="choices" class="grid"></div>
-<button class="next" onclick="nextQ()">Nästa</button>
-<div id="results"></div>
-</div>
+<!-- ALL DIN ORIGINALKOD ÄR IDENTISK FRAM TILL SCRIPT -->
 
 <script>
 
-// 🔗 NYA FUNKTIONER (rätt placerade)
-
+// 🔥 NY FUNKTION – skapa länk (komprimerad + kopiera)
 function createShareLink(){
 
 let data = {
@@ -193,6 +14,7 @@ mode: mode.value
 };
 
 let compressed = LZString.compressToEncodedURIComponent(JSON.stringify(data));
+
 let url = window.location.origin + window.location.pathname + "?data=" + compressed;
 
 navigator.clipboard.writeText(url).then(()=>{
@@ -203,6 +25,8 @@ prompt("Kopiera länken:", url);
 
 }
 
+
+// 🔥 NY FUNKTION – ladda från länk
 function loadFromURL(){
 
 const params = new URLSearchParams(window.location.search);
@@ -224,18 +48,24 @@ document.getElementById("mode").value = parsed.mode || "";
 document.getElementById("questions").innerHTML="";
 
 questions.forEach((q,i)=>{
+
 const div=document.createElement("div");
 div.className="section";
+
 div.innerHTML=`
 <input value="${q.text}" style="width:80%;padding:8px"
 oninput="questions[${i}].text=this.value">
+
 <br><br>
 <label>Ladda upp bild</label><br>
 <input type="file" onchange="loadImg(event,${i})">
+
 <br>
 <img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
 `;
+
 document.getElementById("questions").appendChild(div);
+
 });
 
 setupChoices();
@@ -243,18 +73,16 @@ alert("Frågelista laddad från länk!");
 
 }catch(e){
 console.error(e);
+alert("Kunde inte läsa länken");
 }
 
 }
 
-</script>
 
-<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
-
-<script>
-// 🔥 kör efter att allt laddats
+// 🔥 KÖR AUTOMATISKT (utan att störa något annat)
 loadFromURL();
+
 </script>
 
-</body>
-</html>
+<!-- 🔥 LÄGG TILL DENNA PRECIS INNAN </body> -->
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>

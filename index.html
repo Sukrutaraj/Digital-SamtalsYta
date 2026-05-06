@@ -429,6 +429,19 @@ downloadResults();
 }
 }
 
+function saveTemplate(){
+let name=prompt("Namn på mallen:");
+if(!name)return;
+localStorage.setItem("samtalsyta_"+name,JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value}));
+alert("Sparad!");
+}
+
+function loadTemplate(){
+let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
+let list=document.getElementById("templateList");
+list.style.display="block";
+list.innerHTML="<h3>Välj mall</h3>";
+
 keys.forEach(key=>{
 let name=key.replace("samtalsyta_","");
 let div=document.createElement("div");

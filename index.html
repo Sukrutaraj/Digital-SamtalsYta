@@ -554,24 +554,196 @@ document.getElementById("questions").appendChild(div);
 
 });
 
-function createShareLink(){
+async function createShareLink(){
 
 let data = {
 choices,
 choiceImgs,
 scaleMax,
 questions,
-mode: mode.value
+mode: document.getElementById("mode").value
 };
 
-// 🔑 koda datan
-let encoded = encodeURIComponent(JSON.stringify(data));
+if(!data.questions.length){
+alert("Lägg till minst en fråga");
+return;
+}
 
-// skapa länk
-let url = window.location.origin + window.location.pathname + "?data=" + encoded;
+// token
+let token = localStorage.getItem("gh_token");
+if(!token){
+token = prompt("Klistra in GitHub token:");
+if(!token) return;
+localStorage.setItem("gh_token", token);
+}
 
-// visa
-prompt("Kopiera länken:", url);
+const id = Date.now();
+const base = `samtal-${id}`;
+
+async function upload(path, content){
+await fetch(
+`https://api.github.com/repos/sukrutaraj/checklist-pages/contents/${path}`,
+{
+method:"PUT",
+headers:{
+"Authorization":`token ${token}`,
+"Content-Type":"application/json"
+},
+body: JSON.stringify({
+message:"create samtal",
+content
+})
+}
+);
+}
+
+// 🔹 upload bilder
+for(let i=0;i<data.questions.length;i++){
+let q = data.questions[i];
+
+if(q.img){
+let base64 = q.img.split(",")[1];
+let name = `${base}-q-${i}.jpg`;
+
+await upload(name, base64);
+await new Promise(r=>setTimeout(r,300));
+
+q.img = `https://sukrutaraj.github.io/checklist-pages/${name}`;
+}
+}
+
+// 🔹 choice bilder
+for(let key in data.choiceImgs){
+if(data.choiceImgs[key]){
+let base64 = data.choiceImgs[key].split(",")[1];
+let name = `${base}-${key}.jpg`;
+
+await upload(name, base64);
+await new Promise(r=>setTimeout(r,300));
+
+data.choiceImgs[key] = `https://sukrutaraj.github.io/checklist-pages/${name}`;
+}
+}
+
+// 🔹 HTML (din riktiga UI-logik)
+let html = `
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Samtalsyta</title>
+
+<style>
+${document.querySelector("style").innerHTML}
+</style>
+
+</head>
+
+<body>
+
+<div id="runPanel">
+<h2 id="q"></h2>
+<img id="img" style="max-width:300px"><br>
+<div id="choices" class="grid"></div>
+<button class="next" onclick="nextQ()">Nästa</button>
+<div id="results"></div>
+</div>
+
+<script>
+
+let choices = ${JSON.stringify(data.choices)};
+let choiceImgs = ${JSON.stringify(data.choiceImgs)};
+let scaleMax = ${data.scaleMax};
+let questions = ${JSON.stringify(data.questions)};
+let answers = [];
+let current = 0;
+let selected = null;
+
+function playClick(){
+const click = new Audio("klick.mpeg-4");
+click.currentTime = 0;
+click.play();
+}
+
+function speak(t){
+speechSynthesis.cancel();
+let msg=new SpeechSynthesisUtterance(t);
+msg.lang="sv-SE";
+speechSynthesis.speak(msg);
+}
+
+function render(){
+if(current>=questions.length){
+document.body.innerHTML="<h2>Klar!</h2>";
+return;
+}
+
+q.innerText=questions[current].text;
+img.src=questions[current].img||"";
+
+const mode="${data.mode}";
+const c=document.getElementById("choices");
+c.innerHTML="";
+
+function createBtn(label,type,text){
+let b=document.createElement("div");
+b.className="choice "+type;
+b.innerHTML=label;
+
+b.onclick=function(){
+selected=text;
+document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
+playClick();
+setTimeout(()=>speak(text),120);
+};
+
+c.appendChild(b);
+}
+
+if(mode==="yesnomaybe"){
+createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
+createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+}
+
+if(mode==="yesno"){
+createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+}
+}
+
+function nextQ(){
+if(!selected)return;
+answers.push({q:questions[current].text,a:selected});
+selected=null;
+current++;
+render();
+}
+
+render();
+
+<\/script>
+
+</body>
+</html>
+`;
+
+// upload HTML
+await upload(
+`${base}.html`,
+btoa(unescape(encodeURIComponent(html)))
+);
+
+const url = `https://sukrutaraj.github.io/checklist-pages/${base}.html`;
+
+try{
+await navigator.clipboard.writeText(url);
+}catch(e){}
+
+alert("Länk skapad!\n\n" + url + "\n\nVänta 10–20 sek.");
 
 }
 

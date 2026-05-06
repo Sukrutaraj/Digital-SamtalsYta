@@ -554,93 +554,188 @@ document.getElementById("questions").appendChild(div);
 
 });
 
-function createShareLink(){
+async function createShareLink(){
 
 let data = {
 choices,
 choiceImgs,
 scaleMax,
 questions,
-mode: mode.value
+mode: document.getElementById("mode").value
 };
 
-// 🔑 koda datan
-let encoded = encodeURIComponent(JSON.stringify(data));
+if(!data.questions.length){
+alert("Lägg till minst en fråga");
+return;
+}
 
-// skapa länk
-let url = window.location.origin + window.location.pathname + "?data=" + encoded;
+// token
+let token = localStorage.getItem("gh_token");
+if(!token){
+token = prompt("Klistra in GitHub token:");
+if(!token) return;
+localStorage.setItem("gh_token", token);
+}
 
-// visa
-prompt("Kopiera länken:", url);
+const id = Date.now();
+const base = `samtal-${id}`;
+
+// upload helper
+async function upload(path, content){
+await fetch(
+`https://api.github.com/repos/USERNAME/checklist-pages/contents/${path}`,
+{
+method:"PUT",
+headers:{
+"Authorization":`token ${token}`,
+"Content-Type":"application/json"
+},
+body: JSON.stringify({
+message:"create samtal",
+content
+})
+}
+);
+}
+
+// 🔹 1. upload bilder
+for(let i=0;i<data.questions.length;i++){
+
+let q = data.questions[i];
+
+if(q.img){
+let base64 = q.img.split(",")[1];
+let name = `${base}-q-${i}.jpg`;
+
+await upload(name, base64);
+await new Promise(r=>setTimeout(r,300));
+
+q.img = `https://USERNAME.github.io/checklist-pages/${name}`;
+}
+}
+
+// 🔹 choice bilder
+for(let key in data.choiceImgs){
+
+if(data.choiceImgs[key]){
+let base64 = data.choiceImgs[key].split(",")[1];
+let name = `${base}-${key}.jpg`;
+
+await upload(name, base64);
+await new Promise(r=>setTimeout(r,300));
+
+data.choiceImgs[key] = `https://USERNAME.github.io/checklist-pages/${name}`;
+}
+}
+
+// 🔹 2. bygg HTML (FRISTÅENDE)
+let html = `
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Samtalsyta</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;text-align:center;padding:20px;}
+.choice{margin:10px;padding:20px;border-radius:12px;font-size:20px;}
+.yes{background:#4CAF50;}
+.no{background:#F44336;}
+.maybe{background:orange;}
+</style>
+</head>
+
+<body>
+
+<h2 id="q"></h2>
+<img id="img" style="max-width:300px"><br>
+<div id="choices"></div>
+<button onclick="next()">Nästa</button>
+
+<script>
+
+let data = ${JSON.stringify(data)};
+let i = 0;
+let selected = null;
+
+function speak(t){
+let msg=new SpeechSynthesisUtterance(t);
+msg.lang="sv-SE";
+speechSynthesis.speak(msg);
+}
+
+function render(){
+
+if(i >= data.questions.length){
+document.body.innerHTML = "<h2>Klar!</h2>";
+return;
+}
+
+let q = data.questions[i];
+document.getElementById("q").innerText = q.text;
+document.getElementById("img").src = q.img || "";
+
+let c = document.getElementById("choices");
+c.innerHTML = "";
+
+function btn(label,cls,text){
+let b = document.createElement("div");
+b.className = "choice "+cls;
+b.innerHTML = label;
+
+b.onclick = function(){
+selected = text;
+speak(text);
+};
+
+c.appendChild(b);
+}
+
+let m = data.mode;
+
+if(m==="yesnomaybe"){
+btn(data.choiceImgs.v1?'<img src="'+data.choiceImgs.v1+'">':data.choices.v1.text,"yes",data.choices.v1.text);
+btn(data.choiceImgs.v2?'<img src="'+data.choiceImgs.v2+'">':data.choices.v2.text,"maybe",data.choices.v2.text);
+btn(data.choiceImgs.v3?'<img src="'+data.choiceImgs.v3+'">':data.choices.v3.text,"no",data.choices.v3.text);
+}
+
+if(m==="yesno"){
+btn(data.choiceImgs.v1?'<img src="'+data.choiceImgs.v1+'">':data.choices.v1.text,"yes",data.choices.v1.text);
+btn(data.choiceImgs.v3?'<img src="'+data.choiceImgs.v3+'">':data.choices.v3.text,"no",data.choices.v3.text);
+}
 
 }
 
-function loadFromURL(){
+function next(){
+if(!selected) return;
+selected=null;
+i++;
+render();
+}
 
-const params = new URLSearchParams(window.location.search);
-const data = params.get("data");
+render();
 
-if(!data) return;
+<\/script>
 
-try{
-
-let parsed = JSON.parse(decodeURIComponent(data));
-
-choices = parsed.choices || choices;
-choiceImgs = parsed.choiceImgs || {};
-scaleMax = parsed.scaleMax || 5;
-questions = parsed.questions || [];
-
-document.getElementById("mode").value = parsed.mode || "";
-
-document.getElementById("questions").innerHTML="";
-
-questions.forEach((q,i)=>{
-
-const div=document.createElement("div");
-div.className="section";
-
-div.innerHTML=`
-<input value="${q.text}" style="width:80%;padding:8px"
-oninput="questions[${i}].text=this.value">
-
-<br><br>
-<label>Ladda upp bild</label><br>
-<input type="file" onchange="loadImg(event,${i})">
-
-<br>
-<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+</body>
+</html>
 `;
 
-document.getElementById("questions").appendChild(div);
+// 🔹 3. upload HTML
+await upload(
+`${base}.html`,
+btoa(unescape(encodeURIComponent(html)))
+);
 
-});
+// 🔹 4. länk
+const url = `https://USERNAME.github.io/checklist-pages/${base}.html`;
 
-setupChoices();
+try{
+await navigator.clipboard.writeText(url);
+}catch(e){}
 
-alert("Frågelista laddad från länk!");
+alert("Länk skapad!\n\n" + url + "\n\nVänta 10–20 sek.");
 
-}catch(e){
-console.error(e);
-}
-
-}
-
-// kör direkt
-loadFromURL(); 
-
-setupChoices();
-alert("Frågelista laddad!");
-
-}catch{
-alert("Fel fil");
-}
-};
-
-r.readAsText(e.target.files[0]);
-};
-
-input.click();
 }
 
 setupChoices();

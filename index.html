@@ -1,3 +1,4 @@
+lägg till de här stegen på rätt plats i koden, utan att röra vid några andra existerande funktioner och dela gärna hela html kod med mig.
 
 <!DOCTYPE html> 
 <html lang="sv">
@@ -554,6 +555,81 @@ document.getElementById("questions").appendChild(div);
 
 });
 
+function createShareLink(){
+
+let data = {
+choices,
+choiceImgs,
+scaleMax,
+questions,
+mode: mode.value
+};
+
+// 🔑 koda datan
+let encoded = encodeURIComponent(JSON.stringify(data));
+
+// skapa länk
+let url = window.location.origin + window.location.pathname + "?data=" + encoded;
+
+// visa
+prompt("Kopiera länken:", url);
+
+}
+
+function loadFromURL(){
+
+const params = new URLSearchParams(window.location.search);
+const data = params.get("data");
+
+if(!data) return;
+
+try{
+
+let parsed = JSON.parse(decodeURIComponent(data));
+
+choices = parsed.choices || choices;
+choiceImgs = parsed.choiceImgs || {};
+scaleMax = parsed.scaleMax || 5;
+questions = parsed.questions || [];
+
+document.getElementById("mode").value = parsed.mode || "";
+
+document.getElementById("questions").innerHTML="";
+
+questions.forEach((q,i)=>{
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+`;
+
+document.getElementById("questions").appendChild(div);
+
+});
+
+setupChoices();
+
+alert("Frågelista laddad från länk!");
+
+}catch(e){
+console.error(e);
+}
+
+}
+
+// kör direkt
+loadFromURL(); 
+
 setupChoices();
 alert("Frågelista laddad!");
 
@@ -571,69 +647,6 @@ input.click();
 setupChoices();
 addQuestion();
 
- function createShareLink(){
-
-let data = {
-choices,
-choiceImgs,
-scaleMax,
-questions,
-mode: mode.value
-};
-
-let encoded = encodeURIComponent(JSON.stringify(data));
-let url = window.location.origin + window.location.pathname + "?data=" + encoded;
-
-prompt("Kopiera länken:", url);
-}
-
-function loadFromURL(){
-
-const params = new URLSearchParams(window.location.search);
-const data = params.get("data");
-
-if(!data) return;
-
-try{
-let parsed = JSON.parse(decodeURIComponent(data));
-
-choices = parsed.choices || choices;
-choiceImgs = parsed.choiceImgs || {};
-scaleMax = parsed.scaleMax || 5;
-questions = parsed.questions || [];
-
-document.getElementById("mode").value = parsed.mode || "";
-document.getElementById("questions").innerHTML="";
-
-questions.forEach((q,i)=>{
-const div=document.createElement("div");
-div.className="section";
-
-div.innerHTML=`
-<input value="${q.text}" style="width:80%;padding:8px"
-oninput="questions[${i}].text=this.value">
-
-<br><br>
-<label>Ladda upp bild</label><br>
-<input type="file" onchange="loadImg(event,${i})">
-
-<br>
-<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
-`;
-
-document.getElementById("questions").appendChild(div);
-});
-
-setupChoices();
-
-// 🔥 först ladda ev. data från länk
-loadFromURL();
-
-// 🔥 bara om inget laddades → skapa första tom fråga
-if(questions.length === 0){
-  addQuestion();
-}
-  
 </script>
 <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 </body>

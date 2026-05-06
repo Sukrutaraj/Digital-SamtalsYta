@@ -156,16 +156,6 @@ font-size:13px;
 
 <div class="tool-row">
 
-<div class="tool-btn" onclick="saveTemplate()">
-<div class="icon">💾</div>
-<div class="label">Spara</div>
-</div>
-
-<div class="tool-btn" onclick="loadTemplate()">
-<div class="icon">📂</div>
-<div class="label">Öppna</div>
-</div>
-
 <div class="tool-btn" onclick="exportPlaylist()">
 <div class="icon">⬇️</div>
 <div class="label">Ladda ner</div>
@@ -438,19 +428,6 @@ downloadResults();
 downloadResults();
 }
 }
-
-function saveTemplate(){
-let name=prompt("Namn på mallen:");
-if(!name)return;
-localStorage.setItem("samtalsyta_"+name,JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value}));
-alert("Sparad!");
-}
-
-function loadTemplate(){
-let keys=Object.keys(localStorage).filter(k=>k.startsWith("samtalsyta_"));
-let list=document.getElementById("templateList");
-list.style.display="block";
-list.innerHTML="<h3>Välj mall</h3>";
 
 keys.forEach(key=>{
 let name=key.replace("samtalsyta_","");

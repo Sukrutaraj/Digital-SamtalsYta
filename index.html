@@ -545,8 +545,8 @@ document.getElementById("questions").appendChild(div);
 });
 
 async function createShareLink(){
-alert("klick");
-let data = {
+
+ let data = {
 choices,
 choiceImgs,
 scaleMax,
@@ -794,7 +794,7 @@ loadFromURL();
 setupChoices();
 alert("Frågelista laddad!");
 
-}catch{
+}catch(e){
 alert("Fel fil");
 }
 };

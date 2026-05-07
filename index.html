@@ -610,47 +610,52 @@ let selected = null;
 
 function render(){
 
-if(!questions || !questions.length){
- document.body.innerHTML="<h2>Inga frågor</h2>";
- return;
-}
+  if(!questions || !questions.length){
+    document.body.innerHTML="<h2>Inga frågor</h2>";
+    return;
+  }
 
-const qEl = document.getElementById("q");
-const imgEl = document.getElementById("img");
+  if(current >= questions.length){
+    document.body.innerHTML="<h2>Klar!</h2>";
+    return;
+  }
 
-qEl.innerText = questions[current].text;
-imgEl.src = questions[current].img || "";
+  const qEl = document.getElementById("q");
+  const imgEl = document.getElementById("img");
 
-let mode = "${data.mode}";
-if(!mode) mode = "yesnomaybe";
+  qEl.innerText = questions[current].text;
+  imgEl.src = questions[current].img || "";
 
-const c=document.getElementById("choices");
-c.innerHTML="";
+  let mode = "${data.mode}";
+  if(!mode) mode = "yesnomaybe";
 
- function createBtn(label,type,text){
-  let b=document.createElement("div");
-  b.className="choice "+type;
-  b.innerHTML=label;
+  const c = document.getElementById("choices");
+  c.innerHTML = "";
 
-  b.onclick=function(){
-   selected=text;
-   document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
-   b.classList.add("active");
-  };
+  function createBtn(label,type,text){
+    let b = document.createElement("div");
+    b.className = "choice " + type;
+    b.innerHTML = label;
 
-  c.appendChild(b);
- }
+    b.onclick = function(){
+      selected = text;
+      document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+    };
 
- if(mode==="yesnomaybe"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
- }
+    c.appendChild(b);
+  }
 
- if(mode==="yesno"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
- }
+  if(mode==="yesnomaybe"){
+    createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+    createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
+    createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+  }
+
+  if(mode==="yesno"){
+    createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+    createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+  }
 }
 
 function nextQ(){

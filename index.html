@@ -609,13 +609,17 @@ let current = 0;
 let selected = null;
 
 function render(){
+
  if(current>=questions.length){
   document.body.innerHTML="<h2>Klar!</h2>";
   return;
  }
 
- q.innerText=questions[current].text;
- img.src=questions[current].img||"";
+ const qEl = document.getElementById("q");
+ const imgEl = document.getElementById("img");
+
+ qEl.innerText = questions[current].text;
+ imgEl.src = questions[current].img || "";
 
  const mode="${data.mode}";
  const c=document.getElementById("choices");
@@ -634,6 +638,18 @@ function render(){
 
   c.appendChild(b);
  }
+
+ if(mode==="yesnomaybe"){
+  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+  createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
+  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+ }
+
+ if(mode==="yesno"){
+  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+ }
+}
 
  if(mode==="yesnomaybe"){
   createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);

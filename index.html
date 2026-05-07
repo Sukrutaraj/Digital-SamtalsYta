@@ -613,7 +613,7 @@ ${document.querySelector("style").innerHTML}
 
 let choices = ${JSON.stringify(data.choices)};
 let choiceImgs = ${JSON.stringify(data.choiceImgs)};
-let scaleMax = ${data.scaleMax};
+if(!scaleMax) scaleMax = 5;
 let questions = ${JSON.stringify(data.questions)};
 let current = 0;
 let selected = null;
@@ -626,7 +626,7 @@ function render(){
     return;
   }
 
-  if(current >= questions.length){
+  if(current >= questions.length || !questions[current]){
   showResults();
   return;
 }
@@ -644,18 +644,60 @@ function render(){
   c.innerHTML = "";
 
   function createBtn(label,type,text){
-    let b = document.createElement("div");
-    b.className = "choice " + type;
-    b.innerHTML = label;
 
-    b.onclick = function(){
-      selected = text;
-      document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
-    };
+  let b = document.createElement("div");
 
-    c.appendChild(b);
-  }
+  b.className = "choice " + type;
+
+  b.innerHTML = label;
+
+  b.onclick = function(){
+
+    selected = text;
+
+    document.querySelectorAll(".choice").forEach(x=>{
+      x.classList.remove("active");
+    });
+
+    b.classList.add("active");
+
+    // 🔊 klickljud
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+
+      o.type = "sine";
+      o.frequency.value = 600;
+
+      o.connect(g);
+      g.connect(ctx.destination);
+
+      o.start();
+
+      g.gain.exponentialRampToValueAtTime(
+        0.0001,
+        ctx.currentTime + 0.2
+      );
+
+    }catch(e){}
+
+    // 🗣️ tal
+    try{
+      speechSynthesis.cancel();
+
+      let msg = new SpeechSynthesisUtterance(text);
+
+      msg.lang = "sv-SE";
+
+      speechSynthesis.speak(msg);
+
+    }catch(e){}
+  };
+
+  c.appendChild(b);
+}
 
   if(mode==="yesnomaybe"){
     createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
@@ -666,6 +708,13 @@ function render(){
   if(mode==="yesno"){
     createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
     createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+  }
+
+  if(mode==="scale"){
+  if(!scaleMax) scaleMax = 5;
+
+  for(let i=1;i<=scaleMax;i++){
+    createBtn(i, "scale", i.toString());
   }
 }
 

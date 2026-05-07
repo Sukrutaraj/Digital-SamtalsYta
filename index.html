@@ -691,68 +691,121 @@ render();
 
 function importPlaylist(){
 
-  let input=document.createElement("input");
-  input.type="file";
-  input.accept="application/json";
+let input=document.createElement("input");
+input.type="file";
+input.accept="application/json";
 
-  input.onchange=e=>{
-    let r=new FileReader();
+input.onchange=e=>{
+let r=new FileReader();
 
-    r.onload=()=>{
-      try{
+r.onload=()=>{
+try{
+let data=JSON.parse(r.result);
 
-        let data=JSON.parse(r.result);
+choices=data.choices;
+choiceImgs=data.choiceImgs||{};
+scaleMax=data.scaleMax;
+questions=data.questions;
 
-        choices=data.choices;
-        choiceImgs=data.choiceImgs||{};
-        scaleMax=data.scaleMax;
-        questions=data.questions;
+document.getElementById("mode").value=data.mode;
+document.getElementById("questions").innerHTML="";
 
-        document.getElementById("mode").value=data.mode;
-        document.getElementById("questions").innerHTML="";
+questions.forEach((q,i)=>{
 
-        questions.forEach((q,i)=>{
+const div=document.createElement("div");
+div.className="section";
 
-          const div=document.createElement("div");
-          div.className="section";
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
 
-          div.innerHTML=`
-          <input value="${q.text}" style="width:80%;padding:8px"
-          oninput="questions[${i}].text=this.value">
+<br><br>
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
 
-          <br><br>
-          <label>Ladda upp bild</label><br>
-          <input type="file" onchange="loadImg(event,${i})">
+<br>
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+`;
 
-          <br>
-          <img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
-          `;
+document.getElementById("questions").appendChild(div);
 
-          document.getElementById("questions").appendChild(div);
-        });
+});
 
-        setupChoices();
+function loadFromURL(){
 
-        alert("Frågelista laddad!");
+const params = new URLSearchParams(window.location.search);
+const data = params.get("data");
 
-      }catch(e){
-        alert("Fel fil");
-      }
-    };
+if(!data) return;
 
-    r.readAsText(e.target.files[0]);
-  };
+try{
 
-  input.click();
+let parsed = JSON.parse(decodeURIComponent(data));
+
+choices = parsed.choices || choices;
+choiceImgs = parsed.choiceImgs || {};
+scaleMax = parsed.scaleMax || 5;
+questions = parsed.questions || [];
+
+document.getElementById("mode").value = parsed.mode || "";
+
+document.getElementById("questions").innerHTML="";
+
+questions.forEach((q,i)=>{
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+`;
+
+document.getElementById("questions").appendChild(div);
+
+});
+
+setupChoices();
+
+alert("Frågelista laddad från länk!");
+
+}catch(e){
+console.error(e);
 }
 
-/* ===== INIT ===== */
+}
+
+// kör direkt
+loadFromURL(); 
+
+setupChoices();
+alert("Frågelista laddad!");
+
+}catch(e){
+alert("Fel fil");
+}
+};
+
+r.readAsText(e.target.files[0]);
+};
+
+input.click();
+}
 
 setupChoices();
 addQuestion();
 
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 </body>
 </html>
+
+
+Fixa hela denna delen och ge mig hela den uppdaterad kod härifrån till slutet tack

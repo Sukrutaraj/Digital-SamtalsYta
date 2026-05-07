@@ -493,7 +493,6 @@ document.getElementById("questions").appendChild(div);
 
 setupChoices();
 }
-<script>
 
 function exportPlaylist(){
 let blob=new Blob([JSON.stringify({choices,choiceImgs,scaleMax,questions,mode:mode.value})],{type:"application/json"});
@@ -501,55 +500,6 @@ let a=document.createElement("a");
 a.href=URL.createObjectURL(blob);
 a.download="frågelista.json";
 a.click();
-}
-
-// ✅ GLOBAL
-function loadFromURL(){
-
-const params = new URLSearchParams(window.location.search);
-const data = params.get("data");
-
-if(!data) return;
-
-try{
-
-let parsed = JSON.parse(decodeURIComponent(data));
-
-choices = parsed.choices || choices;
-choiceImgs = parsed.choiceImgs || {};
-scaleMax = parsed.scaleMax || 5;
-questions = parsed.questions || [];
-
-document.getElementById("mode").value = parsed.mode || "";
-document.getElementById("questions").innerHTML="";
-
-questions.forEach((q,i)=>{
-
-const div=document.createElement("div");
-div.className="section";
-
-div.innerHTML=`
-<input value="${q.text}" style="width:80%;padding:8px"
-oninput="questions[${i}].text=this.value">
-
-<br><br>
-<label>Ladda upp bild</label><br>
-<input type="file" onchange="loadImg(event,${i})">
-
-<br>
-<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
-`;
-
-document.getElementById("questions").appendChild(div);
-
-});
-
-setupChoices();
-
-}catch(e){
-console.error(e);
-}
-
 }
 
 function importPlaylist(){
@@ -594,23 +544,9 @@ document.getElementById("questions").appendChild(div);
 
 });
 
-setupChoices();
-
-}catch(e){
-alert("Fel fil");
-}
-};
-
-r.readAsText(e.target.files[0]);
-};
-
-input.click();
-}
-
-// ✅ GLOBAL
 async function createShareLink(){
 
-let data = {
+ let data = {
 choices,
 choiceImgs,
 scaleMax,
@@ -679,18 +615,22 @@ data.choiceImgs[key] = `https://sukrutaraj.github.io/checklist-pages/${name}`;
 }
 }
 
-// 🔹 HTML
+// 🔹 HTML (din riktiga UI-logik)
 let html = `
 <!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Samtalsyta</title>
+
 <style>
 ${document.querySelector("style").innerHTML}
 </style>
+
 </head>
+
 <body>
 
 <div id="runPanel">
@@ -698,17 +638,27 @@ ${document.querySelector("style").innerHTML}
 <img id="img" style="max-width:300px"><br>
 <div id="choices" class="grid"></div>
 <button class="next" onclick="nextQ()">Nästa</button>
+<div id="results"></div>
 </div>
 
 <script>
 
 let choices = ${JSON.stringify(data.choices)};
 let choiceImgs = ${JSON.stringify(data.choiceImgs)};
+let scaleMax = ${data.scaleMax};
 let questions = ${JSON.stringify(data.questions)};
+let answers = [];
 let current = 0;
 let selected = null;
 
+function playClick(){
+const click = new Audio("klick.mpeg-4");
+click.currentTime = 0;
+click.play();
+}
+
 function speak(t){
+speechSynthesis.cancel();
 let msg=new SpeechSynthesisUtterance(t);
 msg.lang="sv-SE";
 speechSynthesis.speak(msg);
@@ -727,32 +677,37 @@ const mode="${data.mode}";
 const c=document.getElementById("choices");
 c.innerHTML="";
 
-function btn(label,cls,text){
+function createBtn(label,type,text){
 let b=document.createElement("div");
-b.className="choice "+cls;
+b.className="choice "+type;
 b.innerHTML=label;
+
 b.onclick=function(){
 selected=text;
-speak(text);
+document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
+playClick();
+setTimeout(()=>speak(text),120);
 };
+
 c.appendChild(b);
 }
 
 if(mode==="yesnomaybe"){
-btn(choices.v1.text,"yes",choices.v1.text);
-btn(choices.v2.text,"maybe",choices.v2.text);
-btn(choices.v3.text,"no",choices.v3.text);
+createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
+createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
 }
 
 if(mode==="yesno"){
-btn(choices.v1.text,"yes",choices.v1.text);
-btn(choices.v3.text,"no",choices.v3.text);
+createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
 }
-
 }
 
 function nextQ(){
 if(!selected)return;
+answers.push({q:questions[current].text,a:selected});
 selected=null;
 current++;
 render();
@@ -767,7 +722,10 @@ render();
 `;
 
 // upload HTML
-await upload(`${base}.html`, btoa(unescape(encodeURIComponent(html))));
+await upload(
+`${base}.html`,
+btoa(unescape(encodeURIComponent(html)))
+);
 
 const url = `https://sukrutaraj.github.io/checklist-pages/${base}.html`;
 
@@ -779,9 +737,78 @@ alert("Länk skapad!\n\n" + url + "\n\nVänta 10–20 sek.");
 
 }
 
-// 🔥 INIT (VIKTIG)
-loadFromURL();
+function loadFromURL(){
+
+const params = new URLSearchParams(window.location.search);
+const data = params.get("data");
+
+if(!data) return;
+
+try{
+
+let parsed = JSON.parse(decodeURIComponent(data));
+
+choices = parsed.choices || choices;
+choiceImgs = parsed.choiceImgs || {};
+scaleMax = parsed.scaleMax || 5;
+questions = parsed.questions || [];
+
+document.getElementById("mode").value = parsed.mode || "";
+
+document.getElementById("questions").innerHTML="";
+
+questions.forEach((q,i)=>{
+
+const div=document.createElement("div");
+div.className="section";
+
+div.innerHTML=`
+<input value="${q.text}" style="width:80%;padding:8px"
+oninput="questions[${i}].text=this.value">
+
+<br><br>
+<label>Ladda upp bild</label><br>
+<input type="file" onchange="loadImg(event,${i})">
+
+<br>
+<img id="img${i}" src="${q.img||""}" style="max-width:200px;${q.img?'':'display:none'}">
+`;
+
+document.getElementById("questions").appendChild(div);
+
+});
+
+setupChoices();
+
+alert("Frågelista laddad från länk!");
+
+}catch(e){
+console.error(e);
+}
+
+}
+
+// kör direkt
+loadFromURL(); 
+
+setupChoices();
+alert("Frågelista laddad!");
+
+}catch(e){
+alert("Fel fil");
+}
+};
+
+r.readAsText(e.target.files[0]);
+};
+
+input.click();
+}
+
 setupChoices();
 addQuestion();
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+</body>
+</html>

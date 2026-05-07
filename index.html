@@ -342,10 +342,22 @@ createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+
 }
 
 if(mode==="yesno"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
+createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+}
 }
 
+function playClick(){
+const click = new Audio("klick.mpeg-4");
+click.currentTime = 0;
+click.play();
+}
+
+function speak(t){
+speechSynthesis.cancel();
+let msg=new SpeechSynthesisUtterance(t);
+msg.lang="sv-SE";
+speechSynthesis.speak(msg);
 }
 
 function nextQ(){
@@ -401,23 +413,31 @@ function downloadResults(){
   a.href = URL.createObjectURL(blob);
   a.download = "resultat.txt";
   a.click();
+} 
+
+function showResults(){
+let r=results;
+r.innerHTML=`<h2>Resultat</h2>
+<button onclick="downloadResults()" class="next">⬇ Ladda ner resultat</button>
+<button onclick="shareResults()" class="next">📩 Skicka resultat</button>`;
+
+answers.forEach((x,i)=>{
+r.innerHTML+=`<div class="section">
+<b>Fråga ${i+1}</b><br>${x.q}<br>Svar: ${x.a}</div>`;
+});
 }
 
-render();
-
-function playClick(){
-const click = new Audio("klick.mpeg-4");
-click.currentTime = 0;
-click.play();
+function downloadResults(){
+let content="RESULTAT\n\n";
+answers.forEach((x,i)=>{
+content+="Fråga "+(i+1)+"\n"+x.q+"\nSvar: "+x.a+"\n\n";
+});
+let blob=new Blob([content],{type:"text/plain"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="resultat.txt";
+a.click();
 }
-
-function speak(t){
-speechSynthesis.cancel();
-let msg=new SpeechSynthesisUtterance(t);
-msg.lang="sv-SE";
-speechSynthesis.speak(msg);
-}
-
 
 /* 🔧 FIXAD SHARE */
 

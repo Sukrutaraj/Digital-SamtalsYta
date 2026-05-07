@@ -324,12 +324,13 @@ let b=document.createElement("div");
 b.className="choice "+type;
 b.innerHTML=label;
 
-b.onclick=function(){
-selected=text;
-document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
-b.classList.add("active");
-playClick();
-setTimeout(()=>speak(text),120);
+b.onclick = function(){
+  selected = text;
+  document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+
+  playClick();
+  setTimeout(()=>speak(text), 120);
 };
 
 c.appendChild(b);
@@ -348,16 +349,25 @@ createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+
 }
 
 function playClick(){
-const click = new Audio("klick.mpeg-4");
-click.currentTime = 0;
-click.play();
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+
+  o.type = "sine";
+  o.frequency.value = 600;
+
+  o.connect(g);
+  g.connect(ctx.destination);
+
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
 }
 
 function speak(t){
-speechSynthesis.cancel();
-let msg=new SpeechSynthesisUtterance(t);
-msg.lang="sv-SE";
-speechSynthesis.speak(msg);
+  speechSynthesis.cancel();
+  let msg = new SpeechSynthesisUtterance(t);
+  msg.lang = "sv-SE";
+  speechSynthesis.speak(msg);
 }
 
 function nextQ(){
@@ -607,6 +617,7 @@ let scaleMax = ${data.scaleMax};
 let questions = ${JSON.stringify(data.questions)};
 let current = 0;
 let selected = null;
+let answers = [];
 
 function render(){
 
@@ -616,9 +627,9 @@ function render(){
   }
 
   if(current >= questions.length){
-    document.body.innerHTML="<h2>Klar!</h2>";
-    return;
-  }
+  showResults();
+  return;
+}
 
   const qEl = document.getElementById("q");
   const imgEl = document.getElementById("img");
@@ -659,13 +670,49 @@ function render(){
 }
 
 function nextQ(){
- if(!selected)return;
- selected=null;
- current++;
- render();
+  if(!selected) return;
+
+  answers.push({
+    q: questions[current].text,
+    a: selected
+  });
+
+  selected = null;
+  current++;
+  render();
 }
 
-render();
+function showResults(){
+
+  let html = "<h2>Resultat</h2>";
+
+  answers.forEach((x,i)=>{
+    html += "<div style='margin:10px;padding:10px;background:#fff;border-radius:10px'>";
+    html += "<b>Fråga "+(i+1)+"</b><br>"+x.q+"<br>Svar: "+x.a;
+    html += "</div>";
+  });
+
+  html += "<button onclick='downloadResults()' style='margin-top:20px;padding:12px 20px'>⬇ Ladda ner</button>";
+
+  document.body.innerHTML = html;
+}
+
+function downloadResults(){
+
+  let content = "RESULTAT\n\n";
+
+  answers.forEach((x,i)=>{
+    content += "Fråga "+(i+1)+"\n";
+    content += x.q + "\n";
+    content += "Svar: " + x.a + "\n\n";
+  });
+
+  let blob = new Blob([content], {type:"text/plain"});
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resultat.txt";
+  a.click();
+}
 
 <\/script>
 

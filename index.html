@@ -592,14 +592,12 @@ ${document.querySelector("style").innerHTML}
 </head>
 <body>
 
-<div id="runPanel">
+<div id="runPanel" style="display:block;">
 <h2 id="q"></h2>
 <img id="img" style="max-width:300px"><br>
 <div id="choices" class="grid"></div>
 <button class="next" onclick="nextQ()">Nästa</button>
 </div>
-
-<script>
 
 <script>
 
@@ -612,20 +610,22 @@ let selected = null;
 
 function render(){
 
- if(current>=questions.length){
-  document.body.innerHTML="<h2>Klar!</h2>";
-  return;
- }
+if(!questions || !questions.length){
+ document.body.innerHTML="<h2>Inga frågor</h2>";
+ return;
+}
 
- const qEl = document.getElementById("q");
- const imgEl = document.getElementById("img");
+const qEl = document.getElementById("q");
+const imgEl = document.getElementById("img");
 
- qEl.innerText = questions[current].text;
- imgEl.src = questions[current].img || "";
+qEl.innerText = questions[current].text;
+imgEl.src = questions[current].img || "";
 
- const mode="${data.mode}";
- const c=document.getElementById("choices");
- c.innerHTML="";
+let mode = "${data.mode}";
+if(!mode) mode = "yesnomaybe";
+
+const c=document.getElementById("choices");
+c.innerHTML="";
 
  function createBtn(label,type,text){
   let b=document.createElement("div");
@@ -661,8 +661,6 @@ function nextQ(){
 }
 
 render();
-
-<\/script>
 
 <\/script>
 

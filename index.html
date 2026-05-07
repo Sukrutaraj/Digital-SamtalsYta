@@ -601,6 +601,8 @@ ${document.querySelector("style").innerHTML}
 
 <script>
 
+<script>
+
 let choices = ${JSON.stringify(data.choices)};
 let choiceImgs = ${JSON.stringify(data.choiceImgs)};
 let scaleMax = ${data.scaleMax};
@@ -651,18 +653,6 @@ function render(){
  }
 }
 
- if(mode==="yesnomaybe"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v2?'<img src="'+choiceImgs.v2+'">':choices.v2.emoji+"<br>"+choices.v2.text,"maybe",choices.v2.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
- }
-
- if(mode==="yesno"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
- }
-}
-
 function nextQ(){
  if(!selected)return;
  selected=null;
@@ -671,6 +661,8 @@ function nextQ(){
 }
 
 render();
+
+<\/script>
 
 <\/script>
 

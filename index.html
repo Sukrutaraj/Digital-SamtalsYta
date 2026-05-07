@@ -344,10 +344,73 @@ createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+
 fixa detta:
 
 if(mode==="yesno"){
-  createBtn(choiceImgs.v1?'<img src="'+choiceImgs.v1+'">':choices.v1.emoji+"<br>"+choices.v1.text,"yes",choices.v1.text);
-  createBtn(choiceImgs.v3?'<img src="'+choiceImgs.v3+'">':choices.v3.emoji+"<br>"+choices.v3.text,"no",choices.v3.text);
+  createBtn(
+    choiceImgs.v1
+      ? '<img src="'+choiceImgs.v1+'">'
+      : choices.v1.emoji+"<br>"+choices.v1.text,
+    "yes",
+    choices.v1.text
+  );
+
+  createBtn(
+    choiceImgs.v3
+      ? '<img src="'+choiceImgs.v3+'">'
+      : choices.v3.emoji+"<br>"+choices.v3.text,
+    "no",
+    choices.v3.text
+  );
 }
 
+if(mode==="scale"){
+
+  for(let i=1;i<=scaleMax;i++){
+
+    createBtn(
+      i,
+      "scale",
+      i.toString()
+    );
+
+  }
+}
+
+}
+
+function playClick(){
+
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = 700;
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      ctx.currentTime + 0.15
+    );
+
+  }catch(e){}
+}
+
+function speak(t){
+
+  try{
+    speechSynthesis.cancel();
+
+    let msg = new SpeechSynthesisUtterance(t);
+    msg.lang = "sv-SE";
+
+    speechSynthesis.speak(msg);
+
+  }catch(e){}
 }
 
 function nextQ(){
@@ -370,18 +433,31 @@ function showResults(){
   let html = "<h2>Resultat</h2>";
 
   answers.forEach((x,i)=>{
+
     html += `
-    <div style="padding:10px;margin:10px;background:white;border-radius:10px">
+    <div style="
+      padding:10px;
+      margin:10px;
+      background:white;
+      border-radius:10px">
+
       <b>Fråga ${i+1}</b><br>
       ${x.q}<br><br>
+
       <b>Svar:</b> ${x.a}
+
     </div>`;
   });
 
   html += `
-  <button onclick="downloadResults()"
-  style="padding:12px 20px;margin-top:20px">
-  ⬇ Ladda ner resultat
+  <button
+    onclick="downloadResults()"
+    style="
+      padding:12px 20px;
+      margin-top:20px">
+
+    ⬇ Ladda ner resultat
+
   </button>`;
 
   document.body.innerHTML = html;
@@ -392,16 +468,23 @@ function downloadResults(){
   let content = "RESULTAT\\n\\n";
 
   answers.forEach((x,i)=>{
-    content += "Fråga "+(i+1)+"\\n";
+
+    content += "Fråga " + (i+1) + "\\n";
     content += x.q + "\\n";
     content += "Svar: " + x.a + "\\n\\n";
+
   });
 
-  let blob = new Blob([content], {type:"text/plain"});
+  let blob = new Blob(
+    [content],
+    {type:"text/plain"}
+  );
+
   let a = document.createElement("a");
 
   a.href = URL.createObjectURL(blob);
   a.download = "resultat.txt";
+
   a.click();
 }
 

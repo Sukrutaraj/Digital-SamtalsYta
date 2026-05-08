@@ -608,6 +608,21 @@ let questions = ${JSON.stringify(data.questions)};
 let current = 0;
 let selected = null;
 
+function playClick(){
+  const click = new Audio("klick.mpeg-4");
+  click.currentTime = 0;
+  click.play();
+}
+
+function speak(t){
+  speechSynthesis.cancel();
+
+  let msg = new SpeechSynthesisUtterance(t);
+  msg.lang = "sv-SE";
+
+  speechSynthesis.speak(msg);
+}
+
 function render(){
 
   if(!questions || !questions.length){
@@ -638,10 +653,21 @@ function render(){
     b.innerHTML = label;
 
     b.onclick = function(){
-      selected = text;
-      document.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
-    };
+
+  selected = text;
+
+  document.querySelectorAll(".choice")
+    .forEach(x=>x.classList.remove("active"));
+
+  b.classList.add("active");
+
+  playClick();
+
+  setTimeout(()=>{
+    speak(text);
+  },120);
+
+};
 
     c.appendChild(b);
   }

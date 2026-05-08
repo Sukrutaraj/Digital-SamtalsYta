@@ -692,53 +692,6 @@ function nextQ(){
  render();
 }
 
-function showResults(){
-
- let html = `
- <h2>Resultat</h2>
-
- <button class="next" onclick="downloadResults()">
- ⬇ Ladda ner resultat
- </button>
- `;
-
- answers.forEach((x,i)=>{
-
-  html += `
-  <div class="section">
-   <b>Fråga ${i+1}</b><br>
-   ${x.q}<br><br>
-   Svar: ${x.a}
-  </div>
-  `;
- });
-
- document.body.innerHTML = html;
-}
-
-function downloadResults(){
-
- let content = "RESULTAT\n\n";
-
- answers.forEach((x,i)=>{
-  content +=
-  "Fråga "+(i+1)+"\n"+
-  x.q+"\n"+
-  "Svar: "+x.a+"\n\n";
- });
-
- let blob = new Blob([content],{
-  type:"text/plain"
- });
-
- let a = document.createElement("a");
-
- a.href = URL.createObjectURL(blob);
- a.download = "resultat.txt";
-
- a.click();
-}
-
 render();
 
 <\/script>

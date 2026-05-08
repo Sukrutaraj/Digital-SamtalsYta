@@ -686,17 +686,9 @@ function render(){
 }
 
 function nextQ(){
-
  if(!selected)return;
-
- answers.push({
-  q: questions[current].text,
-  a: selected
- });
-
  selected=null;
  current++;
-
  render();
 }
 

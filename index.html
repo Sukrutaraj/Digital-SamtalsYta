@@ -596,7 +596,11 @@ ${document.querySelector("style").innerHTML}
 <h2 id="q"></h2>
 <img id="img" style="max-width:300px"><br>
 <div id="choices" class="grid"></div>
+
 <button class="next" onclick="nextQ()">Nästa</button>
+
+<div id="results"></div>
+
 </div>
 
 <script>
@@ -607,6 +611,7 @@ let scaleMax = ${data.scaleMax};
 let questions = ${JSON.stringify(data.questions)};
 let current = 0;
 let selected = null;
+let answers = [];
 
 function playClick(){
   const click = new Audio("klick.mpeg-4");
@@ -631,9 +636,11 @@ function render(){
   }
 
   if(current >= questions.length){
-    document.body.innerHTML="<h2>Klar!</h2>";
-    return;
-  }
+
+ showResults();
+
+ return;
+}
 
   const qEl = document.getElementById("q");
   const imgEl = document.getElementById("img");
@@ -685,10 +692,71 @@ function render(){
 }
 
 function nextQ(){
- if(!selected)return;
- selected=null;
+
+ if(!selected) return;
+
+ answers.push({
+   q: questions[current].text,
+   a: selected
+ });
+
+ selected = null;
  current++;
+
  render();
+}
+
+function showResults(){
+
+ let r = document.getElementById("results");
+
+ r.innerHTML = `
+   <h2>Resultat</h2>
+
+   <button class="next" onclick="downloadResults()">
+   ⬇ Ladda ner resultat
+   </button>
+ `;
+
+ answers.forEach((x,i)=>{
+
+   r.innerHTML += `
+   <div class="section">
+     <b>Fråga ${i+1}</b><br>
+     ${x.q}<br><br>
+
+     <b>Svar:</b> ${x.a}
+   </div>
+   `;
+
+ });
+
+}
+
+function downloadResults(){
+
+ let content = "RESULTAT\n\n";
+
+ answers.forEach((x,i)=>{
+
+   content +=
+   "Fråga " + (i+1) + "\n" +
+   x.q + "\n" +
+   "Svar: " + x.a + "\n\n";
+
+ });
+
+ let blob = new Blob(
+   [content],
+   {type:"text/plain"}
+ );
+
+ let a = document.createElement("a");
+
+ a.href = URL.createObjectURL(blob);
+ a.download = "resultat.txt";
+
+ a.click();
 }
 
 render();

@@ -631,20 +631,9 @@ function render(){
   }
 
 if(current >= questions.length){
-
- let html = "<h2>Resultat</h2>";
-
- answers.forEach((x,i)=>{
-
-  html += `
-  <div class="section">
-   <b>Fråga ${i+1}</b><br>
-   ${x.q}<br><br>
-   Svar: ${x.a}
-  </div>
-  `;
-
- });
+ document.body.innerHTML="<h2>Klar!</h2>";
+ return;
+}
 
  document.getElementById("runPanel").innerHTML = html;
 

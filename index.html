@@ -199,7 +199,7 @@ let scaleMax = 5;
 let questions=[];
 let answers=[];
 let current=0;
-let selected=null;
+let selected=null; 
 
 function setupChoices(){
 const mode = document.getElementById("mode").value;
@@ -361,11 +361,17 @@ speechSynthesis.speak(msg);
 }
 
 function nextQ(){
-if(!selected)return;
-answers.push({q:questions[current].text,a:selected});
-selected=null;
-current++;
-render();
+
+ if(!selected)return;
+
+ answers.push({
+  q: questions[current].text,
+  a: selected
+ });
+
+ selected=null;
+ current++;
+ render();
 }
 
 function showResults(){
@@ -632,7 +638,23 @@ function render(){
   }
 
 if(current >= questions.length){
- document.body.innerHTML="<h2>Klar!</h2>";
+
+ let html = "<h2>Resultat</h2>";
+
+ answers.forEach((x,i)=>{
+
+  html += `
+  <div class="section">
+   <b>Fråga ${i+1}</b><br>
+   ${x.q}<br><br>
+   Svar: ${x.a}
+  </div>
+  `;
+
+ });
+
+ document.getElementById("runPanel").innerHTML = html;
+
  return;
 }
 
@@ -686,7 +708,14 @@ if(current >= questions.length){
 }
 
 function nextQ(){
+
  if(!selected)return;
+
+ answers.push({
+  q: questions[current].text,
+  a: selected
+ });
+
  selected=null;
  current++;
  render();

@@ -703,6 +703,31 @@ function nextQ(){
  render();
 }
 
+function showResults(){
+
+ let html = "<h2>Resultat</h2>";
+
+ answers.forEach((x,i)=>{
+
+  html += `
+  <div class="section">
+   <b>Fråga ${i+1}</b><br>
+   ${x.q}<br><br>
+   Svar: ${x.a}
+  </div>
+  `;
+
+ });
+
+ html += `
+ <button class="next" onclick="downloadResults()">
+ ⬇ Ladda ner resultat
+ </button>
+ `;
+
+ document.getElementById("runPanel").innerHTML = html;
+}
+
 render();
 
 <\/script>

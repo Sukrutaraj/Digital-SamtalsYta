@@ -655,27 +655,21 @@ async function createShareLink() {
   if (!data.questions.length) { alert("Lägg till minst en fråga"); return; }
   if (!modeVal) { alert("Välj en valtyp"); return; }
 
-  let token = localStorage.getItem("gh_token");
-  if (!token) {
-    token = prompt("Klistra in GitHub token:");
-    if (!token) return;
-    localStorage.setItem("gh_token", token);
-  }
-
   const id   = Date.now();
-  const base = `samtal-${id}`;
+  const base = "samtal-" + id;
+  const repo = "sukrutaraj/checklist-pages";
 
   async function upload(path, content) {
     const res = await fetch(
-      `https://api.github.com/repos/sukrutaraj/checklist-pages/contents/${path}`,
+      "https://upload-api-kappa.vercel.app/api/upload",
       {
-        method: "PUT",
-        headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "create samtal", content })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, content, repo })
       }
     );
     const d = await res.json();
-    if (d.message) throw new Error(d.message);
+    if (!d.ok) throw new Error(d.error || "Upload failed");
   }
 
   // Ladda upp bilder
